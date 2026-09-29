@@ -12,7 +12,7 @@ namespace VideoStreamerLauncher
 {
     static class Program
     {
-        private const string InstallerVersion = "1.0.1";
+        private const string InstallerVersion = "1.0.2";
         private static readonly string AppDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Video-Streamer");
         private static readonly string ExePath = Path.Combine(AppDir, "Video Streamer.exe");
         private static readonly string FallbackExePath = Path.Combine(AppDir, "Video-Streamer-Portable.exe");

@@ -124,6 +124,19 @@ body.player-mode {
   font-weight: 600;
   color: #15803d;
   box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  transition: all 0.2s ease;
+}
+
+.status-indicator.starting {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.status-indicator.offline {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
 }
 
 .status-dot {
@@ -133,6 +146,17 @@ body.player-mode {
   background: var(--success);
   box-shadow: 0 0 6px rgba(16, 185, 129, 0.7);
   animation: pulse-dot 2.2s infinite ease-in-out;
+}
+
+.status-indicator.starting .status-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.7);
+}
+
+.status-indicator.offline .status-dot {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+  animation: none;
 }
 
 @keyframes pulse-dot {
@@ -542,14 +566,35 @@ body.player-mode {
   flex: 1;
 }
 
+.link-preview-context-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #0369a1;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 1px 7px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  letter-spacing: 0.1px;
+}
+
+.link-preview-context-tag svg {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+
 .video-title-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
-.video-info h3 {
+.video-title-text {
   font-size: 13.5px;
   font-weight: 600;
   color: var(--text-main);
@@ -557,6 +602,13 @@ body.player-mode {
   overflow: hidden;
   text-overflow: ellipsis;
   margin: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.video-title-text:hover {
+  color: var(--primary);
+  text-decoration: underline;
 }
 
 .btn-edit-title {
@@ -564,12 +616,12 @@ body.player-mode {
   border: none;
   color: var(--text-sub);
   cursor: pointer;
-  padding: 2px;
+  padding: 3px;
   border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.7;
+  opacity: 0.75;
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
@@ -585,13 +637,18 @@ body.player-mode {
   height: 13px;
 }
 
-.video-original-name {
+.video-original-file {
   font-size: 11px;
   color: var(--text-sub);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
+}
+
+.video-original-file .orig-label {
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .video-details {
@@ -1074,6 +1131,102 @@ input:checked + .toggle-slider:before {
   font-size: 12px;
   color: var(--text-muted);
   word-break: break-all;
+}
+
+/* ==========================================================================
+   DELETE MODAL
+   ========================================================================== */
+.delete-dialog {
+  max-width: 440px;
+}
+
+.danger-badge {
+  background: #fef2f2 !important;
+  color: #ef4444 !important;
+  border-color: #fecaca !important;
+}
+
+.delete-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #ffffff;
+}
+
+.delete-prompt {
+  font-size: 13.5px;
+  color: var(--text-main);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.delete-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.delete-preview-thumb {
+  width: 64px;
+  height: 38px;
+  background: #0f172a;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--card-border);
+  color: var(--text-sub);
+}
+
+.delete-preview-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.delete-preview-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.delete-preview-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delete-preview-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.delete-warning-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+
+.delete-warning-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 /* ==========================================================================

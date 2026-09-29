@@ -46,9 +46,10 @@ async function initPlayer() {
     }
 
     // Populate video info
-    document.title = videoInfo.originalName;
+    const displayTitle = videoInfo.title || videoInfo.originalName;
+    document.title = displayTitle;
     const titleEl = document.getElementById('video-title');
-    if (titleEl) titleEl.textContent = videoInfo.originalName;
+    if (titleEl) titleEl.textContent = displayTitle;
 
     const sizeEl = document.getElementById('video-size');
     if (sizeEl) {

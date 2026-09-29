@@ -426,6 +426,8 @@ function createApp(options = {}) {
       isAvailable: true,
       id: share.id,
       originalName: share.originalName,
+      title: share.title || share.originalName,
+      description: share.description || '',
       size: share.size,
       mimeType: share.mimeType,
       createdAt: share.createdAt,

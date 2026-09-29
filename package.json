@@ -1,7 +1,7 @@
 {
   "name": "video-streamer",
   "productName": "Video Streamer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Video Streamer - Instant Local Video Streaming Desktop App",
   "main": "electron/main.js",
   "scripts": {

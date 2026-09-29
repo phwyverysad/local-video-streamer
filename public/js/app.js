@@ -18,7 +18,10 @@ const I18N = {
     appTitle: 'Video Streamer',
     headerShare: 'แชร์วิดีโอ',
     statusOnline: 'พร้อมใช้งาน',
-    statusOffline: 'ออฟไลน์',
+    statusPublic: 'พร้อมใช้งาน (สาธารณะ)',
+    statusLocal: 'พร้อมใช้งาน (ในเครื่อง)',
+    statusConnecting: 'กำลังเชื่อมต่ออินเทอร์เน็ต...',
+    statusOffline: 'ออฟไลน์ (ดูในเครื่อง)',
     dropzonePrompt: 'วางไฟล์วิดีโอ หรือ คลิกเพื่อเลือก',
     dropzoneFormats: 'รองรับ MP4 • MKV • MOV • WebM',
     loading: 'กำลังโหลด...',
@@ -45,6 +48,10 @@ const I18N = {
     editTitleNote: 'ชื่อนี้จะปรากฏที่หัวข้อลิงก์และหน้าต่างตัวอย่างบน Discord ทันที',
     labelOriginalFile: 'ไฟล์ต้นฉบับในเครื่อง',
     toastTitleUpdated: 'อัปเดตชื่อตัวอย่างลิงก์เรียบร้อยแล้ว',
+    deleteModalTitle: 'ยืนยันการลบวิดีโอ',
+    deleteModalPrompt: 'คุณแน่ใจหรือไม่ว่าต้องการลบวิดีโอนี้ออกจากระบบ?',
+    deleteModalNote: 'ลิงก์ที่แชร์ไปแล้วและยอดเข้าชมจะถูกยกเลิกถาวรทันที',
+    btnConfirmDelete: 'ลบวิดีโอ',
     viewCount: 'ดู {n} ครั้ง',
     toastCopied: 'คัดลอกลิงก์แล้ว',
     toastShortened: 'ย่อและคัดลอกลิงก์แล้ว',
@@ -74,7 +81,10 @@ const I18N = {
     appTitle: 'Video Streamer',
     headerShare: 'Share Video',
     statusOnline: 'Ready',
-    statusOffline: 'Offline',
+    statusPublic: 'Ready (Public)',
+    statusLocal: 'Ready (Local)',
+    statusConnecting: 'Connecting tunnel...',
+    statusOffline: 'Offline (Local only)',
     dropzonePrompt: 'Drop video file here or click to browse',
     dropzoneFormats: 'Supports MP4 • MKV • MOV • WebM',
     loading: 'Loading...',
@@ -101,6 +111,10 @@ const I18N = {
     editTitleNote: 'This title will be displayed directly in Discord embeds & link preview cards',
     labelOriginalFile: 'Original File Name',
     toastTitleUpdated: 'Link preview title updated successfully',
+    deleteModalTitle: 'Confirm Delete',
+    deleteModalPrompt: 'Are you sure you want to delete this video stream?',
+    deleteModalNote: 'This video and all shared links will be permanently invalidated.',
+    btnConfirmDelete: 'Delete Video',
     viewCount: '{n} views',
     toastCopied: 'Link copied to clipboard',
     toastShortened: 'Link shortened and copied',
@@ -301,16 +315,60 @@ async function renderDashboardView() {
   await loadShares();
 }
 
-// Check server status
+// Check server status & keep public tunnel links updated
 async function checkStatus() {
   try {
     const res = await fetch('/api/status');
     if (!res.ok) return;
     const data = await res.json();
+    const oldPublicUrl = tunnelInfo.publicUrl;
     tunnelInfo = data.tunnel || {};
+
+    const statusEl = document.getElementById('status-text');
+    const indicatorEl = statusEl ? statusEl.closest('.status-indicator') : null;
+
+    if (statusEl && indicatorEl) {
+      indicatorEl.classList.remove('starting', 'offline');
+      if (tunnelInfo.status === 'online' && tunnelInfo.publicUrl) {
+        statusEl.textContent = t('statusPublic');
+        indicatorEl.title = `Cloudflare Tunnel: ${tunnelInfo.publicUrl}`;
+      } else if (tunnelInfo.status === 'starting') {
+        indicatorEl.classList.add('starting');
+        statusEl.textContent = t('statusConnecting');
+        indicatorEl.title = 'กำลังเชื่อมต่อ Cloudflare Tunnel...';
+      } else {
+        indicatorEl.classList.add('offline');
+        statusEl.textContent = t('statusOffline');
+        indicatorEl.title = 'Tunnel ออฟไลน์ - ใช้งานได้เฉพาะในเครื่อง';
+      }
+    }
+
+    // If public URL became available or changed, update all shares in memory and UI
+    if (tunnelInfo.publicUrl && tunnelInfo.publicUrl !== oldPublicUrl) {
+      let needsRerender = false;
+      for (const s of currentShares) {
+        if (!s.shortUrl) {
+          s.publicUrl = `${tunnelInfo.publicUrl}/v/${s.id}`;
+          const input = document.getElementById(`url-input-${s.id}`);
+          if (input) input.value = s.publicUrl;
+          needsRerender = true;
+        }
+      }
+      if (needsRerender && currentShares.length > 0) {
+        renderSharesList();
+      }
+    }
   } catch (err) {
     console.warn('Status check failed:', err);
   }
+}
+
+// Start active background polling for tunnel status
+if (!window.__statusPollStarted) {
+  window.__statusPollStarted = true;
+  setInterval(() => {
+    checkStatus();
+  }, 2500);
 }
 
 // Fetch active shares
@@ -524,11 +582,15 @@ function renderSharesList() {
   }
 
   container.innerHTML = currentShares.map((share) => {
-    const activeUrl = share.shortUrl || share.publicUrl;
+    // Dynamic public URL calculation
+    const effectivePublicUrl = (tunnelInfo.status === 'online' && tunnelInfo.publicUrl)
+      ? `${tunnelInfo.publicUrl}/v/${share.id}`
+      : (share.publicUrl || `${window.location.origin}/v/${share.id}`);
+
+    const activeUrl = share.shortUrl || effectivePublicUrl;
     const isShortened = Boolean(share.shortUrl);
     const viewText = t('viewCount', { n: share.views || 0 });
     const displayTitle = escapeHtml(share.title || share.originalName);
-    const hasCustomTitle = Boolean(share.title && share.title !== share.originalName);
 
     return `
       <div class="share-item" id="share-card-${share.id}">
@@ -539,13 +601,22 @@ function renderSharesList() {
               <span style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;">${SVG_ICONS.play}</span>
             </div>
             <div class="video-info">
+              <div class="link-preview-context-tag" title="${t('editTitleNote')}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+                <span>${t('labelCustomTitle')}</span>
+              </div>
               <div class="video-title-row">
-                <h3 title="${displayTitle}">${displayTitle}</h3>
+                <h3 class="video-title-text" id="title-display-${share.id}" onclick="openEditModal('${share.id}')" title="${t('btnEdit')}">${displayTitle}</h3>
                 <button class="btn-edit-title" onclick="openEditModal('${share.id}')" title="${t('btnEdit')}">
                   ${SVG_ICONS.edit}
                 </button>
               </div>
-              ${hasCustomTitle ? `<div class="video-original-name" title="${escapeHtml(share.originalName)}">(${escapeHtml(share.originalName)})</div>` : ''}
+              <div class="video-original-file" title="${escapeHtml(share.originalName)}">
+                <span class="orig-label">${t('labelOriginalFile')}:</span> ${escapeHtml(share.originalName)}
+              </div>
               <div class="video-details">
                 <span>${formatBytes(share.size)}</span>
                 <span>•</span>
@@ -553,7 +624,7 @@ function renderSharesList() {
               </div>
             </div>
           </div>
-          <button class="btn btn-danger btn-sm" onclick="revokeShare('${share.id}')" title="${t('btnDelete')}">
+          <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${share.id}')" title="${t('btnDelete')}">
             ${SVG_ICONS.trash}
             <span>${t('btnDelete')}</span>
           </button>
@@ -621,7 +692,7 @@ async function copyShareLink(id) {
   }
 }
 
-// Shorten link using spoo.me
+// Shorten link using multi-provider cascade
 async function shortenShareLink(id) {
   const btn = document.getElementById(`btn-shorten-${id}`);
   if (btn) {
@@ -670,28 +741,88 @@ async function shortenShareLink(id) {
   }
 }
 
-// Revoke and delete video
-async function revokeShare(id) {
-  if (!confirm(t('deleteConfirm'))) {
-    return;
+// ==========================================
+// CUSTOM DELETE CONFIRMATION MODAL
+// ==========================================
+let pendingDeleteShareId = null;
+
+function openDeleteModal(id) {
+  const share = currentShares.find(s => s.id === id);
+  if (!share) return;
+  pendingDeleteShareId = id;
+
+  const modal = document.getElementById('delete-modal');
+  const thumb = document.getElementById('delete-modal-thumb');
+  const title = document.getElementById('delete-modal-title');
+  const sub = document.getElementById('delete-modal-sub');
+
+  if (thumb) {
+    thumb.src = `/api/thumbnail/${share.id}.jpg?t=${Date.now()}`;
+    thumb.style.display = 'block';
+  }
+  if (title) title.textContent = share.title || share.originalName;
+  if (sub) sub.textContent = `${formatBytes(share.size)} • ${t('viewCount', { n: share.views || 0 })}`;
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeDeleteModal() {
+  const modal = document.getElementById('delete-modal');
+  if (modal) modal.style.display = 'none';
+  pendingDeleteShareId = null;
+}
+
+function handleDeleteBackdropClick(e) {
+  if (e && e.target && e.target.id === 'delete-modal') {
+    closeDeleteModal();
+  }
+}
+
+async function confirmDeleteShare() {
+  if (!pendingDeleteShareId) return;
+  const id = pendingDeleteShareId;
+  const confirmBtn = document.getElementById('btn-confirm-delete');
+
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = `${SVG_ICONS.spinner} <span>${t('loading')}</span>`;
   }
 
   try {
     const res = await fetch(`/api/shares/${id}`, { method: 'DELETE' });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error || 'Failed to revoke');
+      throw new Error(err.error || 'Failed to delete');
     }
 
+    closeDeleteModal();
     showToast(t('toastDeleted'), 'success');
     currentShares = currentShares.filter(s => s.id !== id);
     renderSharesList();
   } catch (err) {
     showToast(err.message || 'Failed to delete video', 'error');
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = `
+        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        <span>${t('btnConfirmDelete')}</span>
+      `;
+    }
   }
 }
 
-// Edit Title & Metadata Modal Handlers
+// Backward-compatible alias for any direct calls
+function revokeShare(id) {
+  openDeleteModal(id);
+}
+
+// ==========================================
+// REAL-TIME EDIT TITLE & METADATA MODAL
+// ==========================================
 let currentEditingShareId = null;
 
 function openEditModal(id) {
@@ -712,7 +843,7 @@ function openEditModal(id) {
         titleInput.focus();
         titleInput.select();
       }
-    }, 60);
+    }, 50);
   }
 }
 
@@ -734,15 +865,26 @@ async function submitEditTitle(e) {
 
   const titleInput = document.getElementById('edit-title-input');
   const newTitle = titleInput ? titleInput.value.trim() : '';
+  const shareId = currentEditingShareId;
   const saveBtn = document.getElementById('btn-save-title');
 
-  if (saveBtn) {
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = `${SVG_ICONS.spinner} <span>${t('loading')}</span>`;
+  // Real-time update in memory & DOM immediately
+  const target = currentShares.find(s => s.id === shareId);
+  const oldTitle = target ? target.title : '';
+  if (target) {
+    target.title = newTitle || target.originalName;
+    const titleTextEl = document.getElementById(`title-display-${shareId}`);
+    if (titleTextEl) {
+      titleTextEl.textContent = target.title;
+    }
   }
 
+  closeEditModal();
+  showToast(t('toastTitleUpdated'), 'success');
+
+  // Asynchronous background persistence to server
   try {
-    const res = await fetch(`/api/shares/${currentEditingShareId}`, {
+    const res = await fetch(`/api/shares/${shareId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: newTitle })
@@ -752,23 +894,17 @@ async function submitEditTitle(e) {
     if (!res.ok) {
       throw new Error(data.error || 'Failed to update title');
     }
-
-    // Update in memory currentShares
-    const target = currentShares.find(s => s.id === currentEditingShareId);
     if (target && data.share) {
       target.title = data.share.title;
     }
-
-    closeEditModal();
-    showToast(t('toastTitleUpdated'), 'success');
-    renderSharesList();
   } catch (err) {
-    showToast(err.message || 'Failed to update title', 'error');
-  } finally {
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = `<span>${t('btnSave')}</span>`;
+    // Revert if failed
+    if (target) {
+      target.title = oldTitle;
+      const titleTextEl = document.getElementById(`title-display-${shareId}`);
+      if (titleTextEl) titleTextEl.textContent = oldTitle;
     }
+    showToast(err.message || 'Failed to update title', 'error');
   }
 }
 
@@ -780,8 +916,6 @@ function uploadVideoFile(file) {
   const progressFill = document.getElementById('progress-fill');
   const progressText = document.getElementById('progress-text');
   const progressPercent = document.getElementById('progress-percent');
-  const customTitleInput = document.getElementById('custom-title-input');
-  const customTitle = customTitleInput ? customTitleInput.value.trim() : '';
 
   progressWrap.style.display = 'block';
   progressFill.style.width = '0%';
@@ -790,9 +924,6 @@ function uploadVideoFile(file) {
 
   const formData = new FormData();
   formData.append('video', file);
-  if (customTitle) {
-    formData.append('title', customTitle);
-  }
 
   const xhr = new XMLHttpRequest();
   xhr.open('POST', '/api/shares/upload', true);
@@ -808,15 +939,18 @@ function uploadVideoFile(file) {
   xhr.onload = () => {
     progressWrap.style.display = 'none';
     if (xhr.status === 201) {
-      if (customTitleInput) customTitleInput.value = '';
       showToast(t('toastUploaded'), 'success');
       try {
         const res = JSON.parse(xhr.responseText);
         if (res.share && res.share.id) {
           extractAndUploadThumbnail(res.share.id, file);
 
-          if (userSettings.autoCopy && res.share.publicUrl) {
-            navigator.clipboard.writeText(res.share.publicUrl).catch(() => {});
+          const copyUrl = (tunnelInfo.status === 'online' && tunnelInfo.publicUrl)
+            ? `${tunnelInfo.publicUrl}/v/${res.share.id}`
+            : (res.share.publicUrl || `${window.location.origin}/v/${res.share.id}`);
+
+          if (userSettings.autoCopy && copyUrl) {
+            navigator.clipboard.writeText(copyUrl).catch(() => {});
           }
         }
       } catch (e) {}
@@ -843,8 +977,6 @@ function uploadVideoFile(file) {
 async function registerLocalFilePath(filePath) {
   if (!filePath) return;
   const pathInput = document.getElementById('local-path-input');
-  const customTitleInput = document.getElementById('custom-title-input');
-  const customTitle = customTitleInput ? customTitleInput.value.trim() : '';
   const btn = document.getElementById('btn-add-path');
 
   if (btn) {
@@ -856,7 +988,7 @@ async function registerLocalFilePath(filePath) {
     const res = await fetch('/api/shares/local', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filePath, title: customTitle })
+      body: JSON.stringify({ filePath })
     });
 
     const data = await res.json();
@@ -865,14 +997,17 @@ async function registerLocalFilePath(filePath) {
     }
 
     if (pathInput) pathInput.value = '';
-    if (customTitleInput) customTitleInput.value = '';
     showToast(t('toastShared'), 'success');
     
     if (data.share && data.share.id) {
       extractAndUploadThumbnail(data.share.id, `/api/stream/${data.share.id}`);
 
-      if (userSettings.autoCopy && data.share.publicUrl) {
-        navigator.clipboard.writeText(data.share.publicUrl).catch(() => {});
+      const copyUrl = (tunnelInfo.status === 'online' && tunnelInfo.publicUrl)
+        ? `${tunnelInfo.publicUrl}/v/${data.share.id}`
+        : (data.share.publicUrl || `${window.location.origin}/v/${data.share.id}`);
+
+      if (userSettings.autoCopy && copyUrl) {
+        navigator.clipboard.writeText(copyUrl).catch(() => {});
       }
     }
     loadShares();
@@ -1125,6 +1260,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (activeModalVideoId) closeVideoModal();
     closeSettingsModal();
+    closeEditModal();
+    closeDeleteModal();
   }
 });
 

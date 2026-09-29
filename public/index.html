@@ -54,29 +54,6 @@
           </div>
         </div>
 
-        <!-- Optional Custom Title for Link Preview / Discord Embed -->
-        <div class="custom-title-section">
-          <div class="custom-title-header">
-            <label for="custom-title-input" class="custom-title-label">
-              <svg class="svg-icon svg-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-              </svg>
-              <span data-i18n="labelCustomTitle">ชื่อตัวอย่างลิงก์ (แสดงบน Discord / โซเชียล)</span>
-            </label>
-            <span class="custom-title-hint" data-i18n="hintOptional">(ไม่บังคับ)</span>
-          </div>
-          <div class="custom-title-input-wrap">
-            <input 
-              type="text" 
-              id="custom-title-input" 
-              class="custom-title-input" 
-              placeholder="เช่น สอนใช้งาน EP.1, ไฮไลท์การเล่น (เว้นว่าง = ใช้ชื่อไฟล์)" 
-              data-i18n-placeholder="placeholderCustomTitle"
-            >
-          </div>
-        </div>
-
         <!-- Or use local file path directly -->
         <div class="divider">
           <span data-i18n="dividerPath">หรือใส่พาธไฟล์ในเครื่อง</span>
@@ -348,6 +325,64 @@
           </button>
         </div>
       </form>
+    </div>
+  <!-- MODAL CUSTOM DELETE CONFIRMATION -->
+  <div id="delete-modal" class="modal-backdrop" style="display: none;" onclick="handleDeleteBackdropClick(event)">
+    <div class="modal-dialog delete-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon-badge danger-badge">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </div>
+          <span data-i18n="deleteModalTitle">ยืนยันการลบวิดีโอ</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeDeleteModal()" title="ปิด">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="delete-body">
+        <p class="delete-prompt" data-i18n="deleteModalPrompt">คุณแน่ใจหรือไม่ว่าต้องการลบวิดีโอนี้ออกจากระบบ?</p>
+        <div class="delete-preview-card">
+          <div class="delete-preview-thumb">
+            <img id="delete-modal-thumb" src="" alt="" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+            <span style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            </span>
+          </div>
+          <div class="delete-preview-info">
+            <div class="delete-preview-title" id="delete-modal-title">-</div>
+            <div class="delete-preview-sub" id="delete-modal-sub">-</div>
+          </div>
+        </div>
+        <div class="delete-warning-note">
+          <svg class="svg-icon-sm" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span data-i18n="deleteModalNote">ลิงก์ที่แชร์ไปแล้วและยอดเข้าชมจะถูกยกเลิกถาวรทันที</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeleteModal()">
+          <span data-i18n="btnCancel">ยกเลิก</span>
+        </button>
+        <button type="button" id="btn-confirm-delete" class="btn btn-danger btn-sm" onclick="confirmDeleteShare()">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          <span data-i18n="btnConfirmDelete">ลบวิดีโอ</span>
+        </button>
+      </div>
     </div>
   </div>
 

@@ -114,18 +114,35 @@ class TunnelManager {
         }
       }, timeoutMs);
 
-      const onOutput = async (chunk) => {
-        const text = chunk.toString();
-        const match = text.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
-        if (match && !resolved) {
+      let foundUrl = null;
+      let isRegistered = false;
+
+      const triggerResolve = () => {
+        if (foundUrl && !resolved) {
           resolved = true;
           clearTimeout(timer);
-          const foundUrl = match[0];
-
-          // Wait a short moment for Cloudflare edge route propagation
           setTimeout(() => {
             resolve(foundUrl);
-          }, 1500);
+          }, 2500);
+        }
+      };
+
+      const onOutput = (chunk) => {
+        const text = chunk.toString();
+        const match = text.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+        if (match && !foundUrl) {
+          foundUrl = match[0];
+          if (isRegistered) {
+            triggerResolve();
+          } else {
+            setTimeout(triggerResolve, 4000);
+          }
+        }
+        if (text.includes('Registered tunnel connection') || text.includes('Registered tunnel') || text.includes('Connection registered')) {
+          isRegistered = true;
+          if (foundUrl) {
+            triggerResolve();
+          }
         }
       };
 
@@ -161,6 +178,7 @@ class TunnelManager {
 
   startHealthCheck() {
     clearInterval(this.healthCheckInterval);
+    let consecutiveFailures = 0;
     this.healthCheckInterval = setInterval(async () => {
       if (this.status === 'online' && this.publicUrl) {
         try {
@@ -172,15 +190,21 @@ class TunnelManager {
           });
           clearTimeout(timer);
           if (!res.ok && (res.status === 503 || res.status === 502)) {
-            console.warn(`[Tunnel] Health check returned ${res.status} (503 Tunnel Unavailable). Restarting tunnel...`);
-            this.stop();
-            this.start(this.port).catch(() => {});
+            consecutiveFailures++;
+            if (consecutiveFailures >= 3) {
+              console.warn(`[Tunnel] Health check failed 3 consecutive times (${res.status}). Restarting tunnel...`);
+              consecutiveFailures = 0;
+              this.stop();
+              this.start(this.port).catch(() => {});
+            }
+          } else {
+            consecutiveFailures = 0;
           }
         } catch (err) {
           // Network fluctuation or temporary glitch
         }
       }
-    }, 20000);
+    }, 30000);
   }
 
   stop() {

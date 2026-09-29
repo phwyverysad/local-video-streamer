@@ -148,7 +148,7 @@ class VideoRegistry {
       } catch (err) {}
     }
 
-    if ((deletePhysicalFile || item.isUploaded) && fs.existsSync(item.filePath)) {
+    if (deletePhysicalFile === true && fs.existsSync(item.filePath)) {
       try {
         fs.unlinkSync(item.filePath);
       } catch (err) {

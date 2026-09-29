@@ -50,7 +50,7 @@ const I18N = {
     toastTitleUpdated: 'อัปเดตชื่อตัวอย่างลิงก์เรียบร้อยแล้ว',
     deleteModalTitle: 'ยืนยันการลบวิดีโอ',
     deleteModalPrompt: 'คุณแน่ใจหรือไม่ว่าต้องการลบวิดีโอนี้ออกจากระบบ?',
-    deleteModalNote: 'ลิงก์ที่แชร์ไปแล้วและยอดเข้าชมจะถูกยกเลิกถาวรทันที',
+    deleteModalNote: 'ลิงก์ที่แชร์จะถูกยกเลิกทันที (ไฟล์วิดีโอบนเครื่องคอมพิวเตอร์ของคุณจะยังอยู่ ไม่ถูกลบ)',
     btnConfirmDelete: 'ลบวิดีโอ',
     viewCount: 'ดู {n} ครั้ง',
     toastCopied: 'คัดลอกลิงก์แล้ว',
@@ -113,7 +113,7 @@ const I18N = {
     toastTitleUpdated: 'Link preview title updated successfully',
     deleteModalTitle: 'Confirm Delete',
     deleteModalPrompt: 'Are you sure you want to delete this video stream?',
-    deleteModalNote: 'This video and all shared links will be permanently invalidated.',
+    deleteModalNote: 'Shared link will be revoked immediately (Your local file on disk remains safe and untouched).',
     btnConfirmDelete: 'Delete Video',
     viewCount: '{n} views',
     toastCopied: 'Link copied to clipboard',
@@ -226,23 +226,28 @@ function showToast(message, type = 'info') {
   const toastText = document.getElementById('toast-text');
   const toastIcon = document.getElementById('toast-icon');
 
+  if (!toast || !toastText) return;
+
   toastText.textContent = message;
-  toast.classList.remove('toast-error');
+  toast.classList.remove('toast-error', 'toast-success');
 
   if (type === 'error') {
     toast.classList.add('toast-error');
-    toastIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    if (toastIcon) {
+      toastIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    }
   } else if (type === 'success') {
-    toastIcon.innerHTML = SVG_ICONS.check;
+    toast.classList.add('toast-success');
+    if (toastIcon) toastIcon.innerHTML = SVG_ICONS.check;
   } else {
-    toastIcon.innerHTML = SVG_ICONS.copy;
+    if (toastIcon) toastIcon.innerHTML = SVG_ICONS.copy;
   }
 
   toast.classList.add('show');
   clearTimeout(window.__toastTimer);
   window.__toastTimer = setTimeout(() => {
     toast.classList.remove('show');
-    toast.classList.remove('toast-error');
+    toast.classList.remove('toast-error', 'toast-success');
   }, 3200);
 }
 
@@ -657,7 +662,7 @@ function renderSharesList() {
               ${isShortened ? SVG_ICONS.check : SVG_ICONS.scissors}
               <span>${isShortened ? t('btnShortened') : t('btnShorten')}</span>
             </button>
-            <button onclick="openExternalLink('${share.localUrl}')" class="btn btn-secondary btn-sm" title="${t('btnOpen')}">
+            <button onclick="openExternalLink('${activeUrl}')" class="btn btn-secondary btn-sm" title="${t('btnOpen')}">
               ${SVG_ICONS.external}
               <span>${t('btnOpen')}</span>
             </button>

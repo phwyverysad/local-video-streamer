@@ -14,3 +14,5 @@ data/*
 !data/.gitkeep
 dashboard_preview.png
 player_preview.png
+แยก/
+test_tmp/

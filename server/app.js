@@ -361,10 +361,10 @@ function createApp(options = {}) {
   app.patch('/api/shares/:id', handleUpdateMeta);
   app.post('/api/shares/:id/meta', handleUpdateMeta);
 
-  // 6. Revoke / Delete a share
+  // 6. Revoke / Delete a share (removes from app only, keeps physical file intact)
   app.delete('/api/shares/:id', (req, res) => {
     const { id } = req.params;
-    const removed = registry.revoke(id, true);
+    const removed = registry.revoke(id, false);
     if (!removed) {
       return res.status(404).json({ error: 'Share not found or already removed' });
     }

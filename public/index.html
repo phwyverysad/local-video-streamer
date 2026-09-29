@@ -21,11 +21,11 @@
             <svg class="svg-icon svg-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
-            <span>แชร์วิดีโอ</span>
+            <span id="txt-share-header" data-i18n="headerShare">แชร์วิดีโอ</span>
           </div>
           <div class="status-indicator">
             <span class="status-dot"></span>
-            <span id="status-text">พร้อมใช้งาน</span>
+            <span id="status-text" data-i18n="statusOnline">พร้อมใช้งาน</span>
           </div>
         </div>
 
@@ -38,8 +38,8 @@
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
           </div>
-          <div class="dropzone-text">วางไฟล์วิดีโอ หรือ คลิกเพื่อเลือก</div>
-          <div class="dropzone-sub">รองรับ MP4 • MKV • MOV • WebM</div>
+          <div class="dropzone-text" data-i18n="dropzonePrompt">วางไฟล์วิดีโอ หรือ คลิกเพื่อเลือก</div>
+          <div class="dropzone-sub" data-i18n="dropzoneFormats">รองรับ MP4 • MKV • MOV • WebM</div>
           <input type="file" id="file-input" accept="video/*">
         </div>
 
@@ -49,14 +49,14 @@
             <div id="progress-fill" class="progress-bar-fill"></div>
           </div>
           <div class="progress-label">
-            <span id="progress-text">กำลังโหลด...</span>
+            <span id="progress-text" data-i18n="loading">กำลังโหลด...</span>
             <span id="progress-percent">0%</span>
           </div>
         </div>
 
         <!-- Or use local file path directly -->
         <div class="divider">
-          <span>หรือใส่พาธไฟล์ในเครื่อง</span>
+          <span data-i18n="dividerPath">หรือใส่พาธไฟล์ในเครื่อง</span>
         </div>
 
         <form id="local-path-form" class="path-form">
@@ -73,7 +73,7 @@
             >
           </div>
           <button type="submit" id="btn-add-path" class="btn btn-primary">
-            <span>แชร์</span>
+            <span data-i18n="btnShare">แชร์</span>
           </button>
         </form>
       </section>
@@ -81,7 +81,7 @@
       <!-- Active Shares List Card -->
       <section class="card">
         <div class="section-header">
-          <span class="section-title">วิดีโอทั้งหมด</span>
+          <span class="section-title" data-i18n="sectionAllVideos">วิดีโอทั้งหมด</span>
           <span id="shares-count" class="badge">0 ไฟล์</span>
         </div>
 
@@ -94,7 +94,7 @@
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
               </svg>
             </div>
-            <p>ยังไม่มีวิดีโอที่แชร์</p>
+            <p data-i18n="emptyState">ยังไม่มีวิดีโอที่แชร์</p>
           </div>
         </div>
       </section>
@@ -125,8 +125,8 @@
             <line x1="9" y1="9" x2="15" y2="15"></line>
           </svg>
         </div>
-        <h2 class="revoked-title">ไม่พบวิดีโอ</h2>
-        <p class="revoked-desc">ไฟล์ถูกยกเลิกการแชร์หรือลบแล้ว</p>
+        <h2 class="revoked-title" data-i18n="videoNotFoundTitle">ไม่พบวิดีโอ</h2>
+        <p class="revoked-desc" data-i18n="videoNotFoundDesc">ไฟล์ถูกยกเลิกการแชร์หรือลบแล้ว</p>
       </div>
 
       <div id="player-loading" class="loading-box">
@@ -135,10 +135,115 @@
             <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
           </svg>
         </div>
-        <p style="font-size: 13px; color: var(--text-muted);">กำลังโหลด...</p>
+        <p style="font-size: 13px; color: var(--text-muted);" data-i18n="loading">กำลังโหลด...</p>
       </div>
     </div>
   </main>
+
+  <!-- FLOATING GEAR SETTINGS BUTTON (Bottom-Left) -->
+  <button id="btn-open-settings" class="floating-settings-btn" onclick="openSettingsModal()" title="การตั้งค่า (Settings)" aria-label="Settings">
+    <svg class="svg-icon gear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  </button>
+
+  <!-- MODAL SETTINGS DIALOG -->
+  <div id="settings-modal" class="modal-backdrop" style="display: none;" onclick="handleSettingsBackdropClick(event)">
+    <div class="modal-dialog settings-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon-badge">
+            <svg class="svg-icon svg-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+          <span data-i18n="settingsTitle">การตั้งค่า</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeSettingsModal()" title="ปิด">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body settings-body">
+        <!-- Language Setting -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label" data-i18n="settingLanguage">ภาษา / Language</span>
+            <span class="setting-desc" data-i18n="settingLanguageDesc">เลือกภาษาที่ต้องการใช้งานในโปรแกรม</span>
+          </div>
+          <div class="segmented-control">
+            <button type="button" class="segmented-btn active" id="lang-th-btn" onclick="setLanguage('th')">
+              <span>ไทย</span>
+            </button>
+            <button type="button" class="segmented-btn" id="lang-en-btn" onclick="setLanguage('en')">
+              <span>English</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Minimize to Tray Setting -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label" data-i18n="settingTray">ทำงานในถาดระบบ (System Tray)</span>
+            <span class="setting-desc" data-i18n="settingTrayDesc">เมื่อปิดหน้าต่าง ให้ย่อลงถาดงานด้านล่าง เพื่อให้วิดีโอยังคงสตรีมได้ต่อเนื่อง</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-minimize-tray" onchange="toggleMinimizeToTray(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- Auto Start Setting -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label" data-i18n="settingAutoStart">เปิดโปรแกรมอัตโนมัติ</span>
+            <span class="setting-desc" data-i18n="settingAutoStartDesc">เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่องคอมพิวเตอร์</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-auto-start" onchange="toggleAutoStart(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- Auto Copy Link Setting -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label" data-i18n="settingAutoCopy">คัดลอกลิงก์อัตโนมัติ</span>
+            <span class="setting-desc" data-i18n="settingAutoCopyDesc">คัดลอกลิงก์สตรีมลงคลิปบอร์ดทันทีหลังแชร์วิดีโอ</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-auto-copy" onchange="toggleAutoCopy(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- App Info Section -->
+        <div class="setting-info-box">
+          <div class="app-version-row">
+            <span class="app-name-tag">Video Streamer</span>
+            <span class="app-ver-tag">v1.0.0</span>
+          </div>
+          <div class="app-status-sub">
+            <span data-i18n="serverStatus">เซิร์ฟเวอร์: ออนไลน์</span>
+            <span>•</span>
+            <span data-i18n="serverPort">พอร์ต: 3000</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span></span>
+        <button class="btn btn-primary btn-sm" onclick="closeSettingsModal()">
+          <span data-i18n="btnDone">เสร็จสิ้น</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL VIDEO PLAYER -->
   <div id="video-modal" class="modal-backdrop" style="display: none;" onclick="handleModalBackdropClick(event)">
@@ -148,7 +253,7 @@
           <svg class="svg-icon svg-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="5 3 19 12 5 21 5 3"></polygon>
           </svg>
-          <span id="modal-video-title">เล่นตัวอย่าง</span>
+          <span id="modal-video-title" data-i18n="modalPlayTitle">เล่นตัวอย่าง</span>
         </div>
         <button class="modal-close-btn" onclick="closeVideoModal()" title="ปิด">
           <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -169,10 +274,10 @@
         <span id="modal-video-size">-</span>
         <div style="display: flex; gap: 8px;">
           <button id="modal-btn-open-tab" class="btn btn-secondary btn-sm" onclick="openModalVideoInNewTab()">
-            <span>เปิดแท็บใหม่</span>
+            <span data-i18n="btnOpenTab">เปิดแท็บใหม่</span>
           </button>
           <button class="btn btn-primary btn-sm" onclick="closeVideoModal()">
-            <span>ปิด</span>
+            <span data-i18n="btnClose">ปิด</span>
           </button>
         </div>
       </div>

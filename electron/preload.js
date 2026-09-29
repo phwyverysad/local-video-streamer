@@ -4,5 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   isElectron: true,
   selectVideoFile: () => ipcRenderer.invoke('dialog:openVideoFile'),
-  openExternalUrl: (url) => ipcRenderer.invoke('shell:openExternal', url)
+  openExternalUrl: (url) => ipcRenderer.invoke('shell:openExternal', url),
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  saveSettings: (settings) => ipcRenderer.invoke('settings:save', settings)
 });

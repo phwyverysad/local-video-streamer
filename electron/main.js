@@ -1,14 +1,59 @@
-const { app, BrowserWindow, dialog, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, shell, ipcMain, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
-const http = require('http');
+const fs = require('fs');
 const { createApp } = require('../server/app');
 const { defaultTunnelManager } = require('../server/tunnel');
 
 let mainWindow = null;
+let tray = null;
 let serverInstance = null;
+let isQuitting = false;
+let hasShownTrayBalloon = false;
 const PORT = process.env.PORT || 3000;
 
 app.setName('Video Streamer');
+
+// Load & Save Desktop App Settings
+const settingsFilePath = path.join(app.getPath('userData'), 'settings.json');
+
+function loadAppSettings() {
+  try {
+    if (fs.existsSync(settingsFilePath)) {
+      const raw = fs.readFileSync(settingsFilePath, 'utf8');
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.warn('[Settings] Failed to load:', e);
+  }
+  return {
+    minimizeToTray: true,
+    autoStart: false,
+    autoCopy: true,
+    language: 'th'
+  };
+}
+
+let appSettings = loadAppSettings();
+
+function saveAppSettings(newSettings) {
+  appSettings = { ...appSettings, ...newSettings };
+  try {
+    fs.writeFileSync(settingsFilePath, JSON.stringify(appSettings, null, 2), 'utf8');
+    
+    // Apply auto-start setting
+    if (typeof appSettings.autoStart === 'boolean') {
+      app.setLoginItemSettings({
+        openAtLogin: appSettings.autoStart,
+        path: process.execPath
+      });
+    }
+
+    updateTrayMenu();
+  } catch (e) {
+    console.warn('[Settings] Failed to save:', e);
+  }
+  return appSettings;
+}
 
 async function startServer() {
   const expressApp = createApp();
@@ -18,7 +63,6 @@ async function startServer() {
       serverInstance = server;
       console.log(`[Video Streamer] Running on http://localhost:${PORT}`);
 
-      // Start Cloudflare Tunnel in the background
       try {
         const publicUrl = await defaultTunnelManager.start(PORT);
         console.log(`[Video Streamer Tunnel] Connected: ${publicUrl}`);
@@ -38,6 +82,56 @@ async function startServer() {
       }
     });
   });
+}
+
+function createTray() {
+  const iconPath = path.join(__dirname, '../public/icon.png');
+  const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
+  
+  tray = new Tray(trayIcon);
+  tray.setToolTip('Video Streamer - Running in background');
+
+  updateTrayMenu();
+
+  tray.on('double-click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
+function updateTrayMenu() {
+  if (!tray) return;
+  const isThai = appSettings.language !== 'en';
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: isThai ? 'เปิดหน้าต่างหลัก' : 'Open Video Streamer',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      }
+    },
+    {
+      label: isThai ? 'เปิดดูบนเบราว์เซอร์' : 'Open in Web Browser',
+      click: () => {
+        shell.openExternal(`http://localhost:${PORT}`);
+      }
+    },
+    { type: 'separator' },
+    {
+      label: isThai ? 'ปิดโปรแกรม' : 'Quit Video Streamer',
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setContextMenu(contextMenu);
 }
 
 function createWindow() {
@@ -68,6 +162,25 @@ function createWindow() {
     return { action: 'deny' };
   });
 
+  // Handle minimize to tray on window close
+  mainWindow.on('close', (event) => {
+    if (!isQuitting && appSettings.minimizeToTray) {
+      event.preventDefault();
+      mainWindow.hide();
+
+      if (!hasShownTrayBalloon && tray) {
+        hasShownTrayBalloon = true;
+        const isThai = appSettings.language !== 'en';
+        tray.displayBalloon({
+          title: 'Video Streamer',
+          content: isThai 
+            ? 'โปรแกรมยังคงทำงานในพื้นหลัง และสตรีมวิดีโออย่างต่อเนื่อง'
+            : 'Running in background. Video streams remain active.'
+        });
+      }
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -76,8 +189,9 @@ function createWindow() {
 // Register Native IPC Handlers
 ipcMain.handle('dialog:openVideoFile', async () => {
   if (!mainWindow) return null;
+  const isThai = appSettings.language !== 'en';
   const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-    title: 'เลือกไฟล์วิดีโอที่ต้องการแชร์',
+    title: isThai ? 'เลือกไฟล์วิดีโอที่ต้องการแชร์' : 'Select Video File to Stream',
     properties: ['openFile'],
     filters: [
       { name: 'วิดีโอ (Video Files)', extensions: ['mp4', 'mkv', 'mov', 'webm', 'avi', 'flv', 'wmv', 'm4v'] },
@@ -94,6 +208,14 @@ ipcMain.handle('shell:openExternal', async (event, url) => {
   }
 });
 
+ipcMain.handle('settings:get', async () => {
+  return appSettings;
+});
+
+ipcMain.handle('settings:save', async (event, newSettings) => {
+  return saveAppSettings(newSettings);
+});
+
 // App Lifecycle
 app.whenReady().then(async () => {
   try {
@@ -102,22 +224,26 @@ app.whenReady().then(async () => {
     console.error('[Video Streamer] Failed to start server:', err);
   }
 
+  createTray();
   createWindow();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
+    } else if (mainWindow) {
+      mainWindow.show();
     }
   });
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' && !appSettings.minimizeToTray) {
     app.quit();
   }
 });
 
 app.on('before-quit', () => {
+  isQuitting = true;
   if (defaultTunnelManager) {
     defaultTunnelManager.stop();
   }

@@ -3,8 +3,148 @@ let currentShares = [];
 let tunnelInfo = { status: 'offline', publicUrl: null };
 let activeModalVideoId = null;
 let currentPlayingId = null;
+let currentLang = 'th';
 
-// SVG Icons Dictionary for dynamic injection (Zero emojis)
+let userSettings = {
+  minimizeToTray: true,
+  autoStart: false,
+  autoCopy: true,
+  language: 'th'
+};
+
+// Multi-Language Dictionary (Thai & English)
+const I18N = {
+  th: {
+    appTitle: 'Video Streamer',
+    headerShare: 'แชร์วิดีโอ',
+    statusOnline: 'พร้อมใช้งาน',
+    statusOffline: 'ออฟไลน์',
+    dropzonePrompt: 'วางไฟล์วิดีโอ หรือ คลิกเพื่อเลือก',
+    dropzoneFormats: 'รองรับ MP4 • MKV • MOV • WebM',
+    loading: 'กำลังโหลด...',
+    dividerPath: 'หรือใส่พาธไฟล์ในเครื่อง',
+    btnShare: 'แชร์',
+    sectionAllVideos: 'วิดีโอทั้งหมด',
+    filesUnit: 'ไฟล์',
+    emptyState: 'ยังไม่มีวิดีโอที่แชร์',
+    btnPlay: 'เล่น',
+    btnCopy: 'คัดลอก',
+    btnCopied: 'คัดลอกแล้ว',
+    btnShorten: 'ย่อลิงก์',
+    btnShortened: 'ย่อแล้ว',
+    btnOpen: 'เปิด',
+    btnDelete: 'ลบ',
+    viewCount: 'ดู {n} ครั้ง',
+    toastCopied: 'คัดลอกลิงก์แล้ว',
+    toastShortened: 'ย่อและคัดลอกลิงก์แล้ว',
+    toastUploaded: 'อัปโหลดสำเร็จ',
+    toastShared: 'แชร์วิดีโอแล้ว',
+    toastDeleted: 'ลบวิดีโอแล้ว',
+    deleteConfirm: 'ต้องการลบวิดีโอนี้หรือไม่?',
+    settingsTitle: 'การตั้งค่า',
+    settingLanguage: 'ภาษา / Language',
+    settingLanguageDesc: 'เลือกภาษาที่ต้องการใช้งานในโปรแกรม',
+    settingTray: 'ทำงานในถาดระบบ (System Tray)',
+    settingTrayDesc: 'เมื่อปิดหน้าต่าง ให้ย่อลงถาดงานด้านล่าง เพื่อให้วิดีโอยังคงสตรีมได้ต่อเนื่อง',
+    settingAutoStart: 'เปิดโปรแกรมอัตโนมัติ',
+    settingAutoStartDesc: 'เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่องคอมพิวเตอร์',
+    settingAutoCopy: 'คัดลอกลิงก์อัตโนมัติ',
+    settingAutoCopyDesc: 'คัดลอกลิงก์สตรีมลงคลิปบอร์ดทันทีหลังแชร์วิดีโอ',
+    serverStatus: 'เซิร์ฟเวอร์: ออนไลน์',
+    serverPort: 'พอร์ต: 3000',
+    btnDone: 'เสร็จสิ้น',
+    btnClose: 'ปิด',
+    btnOpenTab: 'เปิดแท็บใหม่',
+    modalPlayTitle: 'เล่นตัวอย่าง',
+    videoNotFoundTitle: 'ไม่พบวิดีโอ',
+    videoNotFoundDesc: 'ไฟล์ถูกยกเลิกการแชร์หรือลบแล้ว'
+  },
+  en: {
+    appTitle: 'Video Streamer',
+    headerShare: 'Share Video',
+    statusOnline: 'Ready',
+    statusOffline: 'Offline',
+    dropzonePrompt: 'Drop video file here or click to browse',
+    dropzoneFormats: 'Supports MP4 • MKV • MOV • WebM',
+    loading: 'Loading...',
+    dividerPath: 'Or enter local file path',
+    btnShare: 'Share',
+    sectionAllVideos: 'All Videos',
+    filesUnit: 'files',
+    emptyState: 'No shared videos yet',
+    btnPlay: 'Play',
+    btnCopy: 'Copy',
+    btnCopied: 'Copied',
+    btnShorten: 'Shorten',
+    btnShortened: 'Shortened',
+    btnOpen: 'Open',
+    btnDelete: 'Delete',
+    viewCount: '{n} views',
+    toastCopied: 'Link copied to clipboard',
+    toastShortened: 'Link shortened and copied',
+    toastUploaded: 'Uploaded successfully',
+    toastShared: 'Video shared successfully',
+    toastDeleted: 'Video removed',
+    deleteConfirm: 'Are you sure you want to delete this video stream?',
+    settingsTitle: 'Settings',
+    settingLanguage: 'Language / ภาษา',
+    settingLanguageDesc: 'Choose your preferred application language',
+    settingTray: 'Run in System Tray',
+    settingTrayDesc: 'Keep running in background when closed to maintain active video streams',
+    settingAutoStart: 'Start on Boot',
+    settingAutoStartDesc: 'Automatically start Video Streamer on Windows login',
+    settingAutoCopy: 'Auto-copy Link',
+    settingAutoCopyDesc: 'Automatically copy stream link to clipboard upon sharing',
+    serverStatus: 'Server: Online',
+    serverPort: 'Port: 3000',
+    btnDone: 'Done',
+    btnClose: 'Close',
+    btnOpenTab: 'Open New Tab',
+    modalPlayTitle: 'Video Preview',
+    videoNotFoundTitle: 'Video Not Found',
+    videoNotFoundDesc: 'This video has been removed or access was revoked'
+  }
+};
+
+function t(key, vars = {}) {
+  const dict = I18N[currentLang] || I18N.th;
+  let text = dict[key] || I18N.th[key] || key;
+  for (const [k, v] of Object.entries(vars)) {
+    text = text.replace(`{${k}}`, v);
+  }
+  return text;
+}
+
+function applyLanguage(lang) {
+  currentLang = (lang === 'en') ? 'en' : 'th';
+  document.documentElement.lang = currentLang;
+  
+  // Update all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (key) {
+      el.textContent = t(key);
+    }
+  });
+
+  // Update segmented control buttons in settings
+  const thBtn = document.getElementById('lang-th-btn');
+  const enBtn = document.getElementById('lang-en-btn');
+  if (thBtn && enBtn) {
+    if (currentLang === 'en') {
+      thBtn.classList.remove('active');
+      enBtn.classList.add('active');
+    } else {
+      thBtn.classList.add('active');
+      enBtn.classList.remove('active');
+    }
+  }
+
+  // Update shares list texts
+  renderSharesList();
+}
+
+// SVG Icons Dictionary (Zero emojis)
 const SVG_ICONS = {
   play: `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
   copy: `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
@@ -90,9 +230,12 @@ window.addEventListener('popstate', handleRoute);
 // ==========================================
 async function renderDashboardView() {
   document.body.classList.remove('player-mode');
-  document.title = 'สตรีมวิดีโอ';
+  document.title = t('appTitle');
   document.getElementById('view-dashboard').style.display = 'block';
   document.getElementById('view-player').style.display = 'none';
+
+  const settingsBtn = document.getElementById('btn-open-settings');
+  if (settingsBtn) settingsBtn.style.display = 'flex';
 
   // Stop video in dedicated player view if any was playing
   const playerVid = document.getElementById('video-element');
@@ -163,7 +306,6 @@ async function extractAndUploadThumbnail(shareId, source) {
 
     tempVideo.src = videoSrc;
 
-    // 1. Wait for video metadata to load
     await new Promise((resolve, reject) => {
       let isDone = false;
       const onMeta = () => {
@@ -182,7 +324,6 @@ async function extractAndUploadThumbnail(shareId, source) {
       try { await tempVideo.play(); tempVideo.pause(); } catch(e) {}
     }
 
-    // 2. Build candidate timestamps
     const candidates = [];
     if (duration > 1) {
       const rawPoints = [
@@ -203,7 +344,6 @@ async function extractAndUploadThumbnail(shareId, source) {
     }
     if (candidates.length === 0) candidates.push(0.5);
 
-    // 3. Test canvas
     const testCanvas = document.createElement('canvas');
     testCanvas.width = 160;
     testCanvas.height = 90;
@@ -283,7 +423,6 @@ async function extractAndUploadThumbnail(shareId, source) {
       }
     }
 
-    // 4. Upload best extracted thumbnail
     if (bestFrame && bestFrame.startsWith('data:image/jpeg;base64,')) {
       await fetch(`/api/shares/${shareId}/thumbnail`, {
         method: 'POST',
@@ -315,7 +454,7 @@ async function extractAndUploadThumbnail(shareId, source) {
 function renderSharesList() {
   const container = document.getElementById('shares-list');
   const countSpan = document.getElementById('shares-count');
-  if (countSpan) countSpan.textContent = `${currentShares.length} ไฟล์`;
+  if (countSpan) countSpan.textContent = `${currentShares.length} ${t('filesUnit')}`;
 
   if (currentShares.length === 0) {
     container.innerHTML = `
@@ -326,7 +465,7 @@ function renderSharesList() {
             <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
           </svg>
         </div>
-        <p>ยังไม่มีวิดีโอที่แชร์</p>
+        <p>${t('emptyState')}</p>
       </div>
     `;
     return;
@@ -335,6 +474,7 @@ function renderSharesList() {
   container.innerHTML = currentShares.map((share) => {
     const activeUrl = share.shortUrl || share.publicUrl;
     const isShortened = Boolean(share.shortUrl);
+    const viewText = t('viewCount', { n: share.views || 0 });
 
     return `
       <div class="share-item" id="share-card-${share.id}">
@@ -349,13 +489,13 @@ function renderSharesList() {
               <div class="video-details">
                 <span>${formatBytes(share.size)}</span>
                 <span>•</span>
-                <span>ดู ${share.views || 0} ครั้ง</span>
+                <span>${viewText}</span>
               </div>
             </div>
           </div>
-          <button class="btn btn-danger btn-sm" onclick="revokeShare('${share.id}')" title="ลบวิดีโอ">
+          <button class="btn btn-danger btn-sm" onclick="revokeShare('${share.id}')" title="${t('btnDelete')}">
             ${SVG_ICONS.trash}
-            <span>ลบ</span>
+            <span>${t('btnDelete')}</span>
           </button>
         </div>
 
@@ -369,13 +509,13 @@ function renderSharesList() {
             onclick="this.select()"
           >
           <div class="link-actions">
-            <button class="btn btn-play btn-sm" onclick="openVideoModal('${share.id}')" title="เล่นตัวอย่าง">
+            <button class="btn btn-play btn-sm" onclick="openVideoModal('${share.id}')" title="${t('btnPlay')}">
               ${SVG_ICONS.play}
-              <span>เล่น</span>
+              <span>${t('btnPlay')}</span>
             </button>
             <button class="btn btn-primary btn-sm" id="btn-copy-${share.id}" onclick="copyShareLink('${share.id}')">
               ${SVG_ICONS.copy}
-              <span>คัดลอก</span>
+              <span>${t('btnCopy')}</span>
             </button>
             <button 
               class="btn btn-shorten btn-sm" 
@@ -384,11 +524,11 @@ function renderSharesList() {
               ${isShortened ? 'disabled style="opacity:0.7;"' : ''}
             >
               ${isShortened ? SVG_ICONS.check : SVG_ICONS.scissors}
-              <span>${isShortened ? 'ย่อแล้ว' : 'ย่อลิงก์'}</span>
+              <span>${isShortened ? t('btnShortened') : t('btnShorten')}</span>
             </button>
-            <button onclick="openExternalLink('${share.localUrl}')" class="btn btn-secondary btn-sm" title="เปิดหน้าใหม่">
+            <button onclick="openExternalLink('${share.localUrl}')" class="btn btn-secondary btn-sm" title="${t('btnOpen')}">
               ${SVG_ICONS.external}
-              <span>เปิด</span>
+              <span>${t('btnOpen')}</span>
             </button>
           </div>
         </div>
@@ -405,16 +545,16 @@ async function copyShareLink(id) {
 
   try {
     await navigator.clipboard.writeText(input.value);
-    showToast('คัดลอกลิงก์แล้ว', 'success');
+    showToast(t('toastCopied'), 'success');
   } catch (err) {
     input.select();
     document.execCommand('copy');
-    showToast('คัดลอกลิงก์แล้ว', 'success');
+    showToast(t('toastCopied'), 'success');
   }
 
   if (copyBtn) {
     const originalHtml = copyBtn.innerHTML;
-    copyBtn.innerHTML = `${SVG_ICONS.check} <span>คัดลอกแล้ว</span>`;
+    copyBtn.innerHTML = `${SVG_ICONS.check} <span>${t('btnCopied')}</span>`;
     setTimeout(() => {
       copyBtn.innerHTML = originalHtml;
     }, 1500);
@@ -426,7 +566,7 @@ async function shortenShareLink(id) {
   const btn = document.getElementById(`btn-shorten-${id}`);
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `${SVG_ICONS.spinner} <span>กำลังย่อ...</span>`;
+    btn.innerHTML = `${SVG_ICONS.spinner} <span>${t('loading')}</span>`;
   }
 
   try {
@@ -448,31 +588,31 @@ async function shortenShareLink(id) {
       input.value = data.shortUrl;
     }
     if (btn) {
-      btn.innerHTML = `${SVG_ICONS.check} <span>ย่อแล้ว</span>`;
+      btn.innerHTML = `${SVG_ICONS.check} <span>${t('btnShortened')}</span>`;
       btn.style.opacity = '0.7';
     }
 
     try {
       await navigator.clipboard.writeText(data.shortUrl);
-      showToast('ย่อและคัดลอกลิงก์แล้ว', 'success');
+      showToast(t('toastShortened'), 'success');
     } catch (e) {
-      showToast('ย่อลิงก์แล้ว', 'success');
+      showToast(t('toastShortened'), 'success');
     }
 
     const target = currentShares.find(s => s.id === id);
     if (target) target.shortUrl = data.shortUrl;
   } catch (err) {
-    alert('เกิดข้อผิดพลาด: ' + err.message);
+    alert(err.message);
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = `${SVG_ICONS.scissors} <span>ย่อลิงก์</span>`;
+      btn.innerHTML = `${SVG_ICONS.scissors} <span>${t('btnShorten')}</span>`;
     }
   }
 }
 
 // Revoke and delete video
 async function revokeShare(id) {
-  if (!confirm('ต้องการลบวิดีโอนี้หรือไม่?')) {
+  if (!confirm(t('deleteConfirm'))) {
     return;
   }
 
@@ -483,11 +623,11 @@ async function revokeShare(id) {
       throw new Error(err.error || 'Failed to revoke');
     }
 
-    showToast('ลบวิดีโอแล้ว', 'success');
+    showToast(t('toastDeleted'), 'success');
     currentShares = currentShares.filter(s => s.id !== id);
     renderSharesList();
   } catch (err) {
-    alert('ไม่สามารถลบได้: ' + err.message);
+    alert(err.message);
   }
 }
 
@@ -502,7 +642,7 @@ function uploadVideoFile(file) {
 
   progressWrap.style.display = 'block';
   progressFill.style.width = '0%';
-  progressText.textContent = `กำลังโหลด ${file.name}...`;
+  progressText.textContent = `${t('loading')} ${file.name}...`;
   progressPercent.textContent = '0%';
 
   const formData = new FormData();
@@ -522,30 +662,77 @@ function uploadVideoFile(file) {
   xhr.onload = () => {
     progressWrap.style.display = 'none';
     if (xhr.status === 201) {
-      showToast('อัปโหลดสำเร็จ', 'success');
+      showToast(t('toastUploaded'), 'success');
       try {
         const res = JSON.parse(xhr.responseText);
         if (res.share && res.share.id) {
           extractAndUploadThumbnail(res.share.id, file);
+
+          if (userSettings.autoCopy && res.share.publicUrl) {
+            navigator.clipboard.writeText(res.share.publicUrl).catch(() => {});
+          }
         }
       } catch (e) {}
       loadShares();
     } else {
-      let errMsg = 'อัปโหลดไม่สำเร็จ';
+      let errMsg = 'Failed to upload';
       try {
         const res = JSON.parse(xhr.responseText);
         if (res.error) errMsg = res.error;
       } catch (e) {}
-      alert('ข้อผิดพลาด: ' + errMsg);
+      alert(errMsg);
     }
   };
 
   xhr.onerror = () => {
     progressWrap.style.display = 'none';
-    alert('การเชื่อมต่อขัดข้อง');
+    alert('Connection failed');
   };
 
   xhr.send(formData);
+}
+
+// Register local file path directly (for Electron or path input)
+async function registerLocalFilePath(filePath) {
+  if (!filePath) return;
+  const pathInput = document.getElementById('local-path-input');
+  const btn = document.getElementById('btn-add-path');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `${SVG_ICONS.spinner} <span>${t('loading')}</span>`;
+  }
+
+  try {
+    const res = await fetch('/api/shares/local', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filePath })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Cannot open file');
+    }
+
+    if (pathInput) pathInput.value = '';
+    showToast(t('toastShared'), 'success');
+    
+    if (data.share && data.share.id) {
+      extractAndUploadThumbnail(data.share.id, `/api/stream/${data.share.id}`);
+
+      if (userSettings.autoCopy && data.share.publicUrl) {
+        navigator.clipboard.writeText(data.share.publicUrl).catch(() => {});
+      }
+    }
+    loadShares();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<span>${t('btnShare')}</span>`;
+    }
+  }
 }
 
 // ==========================================
@@ -556,6 +743,9 @@ async function renderPlayerView(videoId) {
   currentPlayingId = videoId;
   document.getElementById('view-dashboard').style.display = 'none';
   document.getElementById('view-player').style.display = 'flex';
+
+  const settingsBtn = document.getElementById('btn-open-settings');
+  if (settingsBtn) settingsBtn.style.display = 'none';
 
   const loadingEl = document.getElementById('player-loading');
   const activeEl = document.getElementById('player-active');
@@ -568,7 +758,7 @@ async function renderPlayerView(videoId) {
   if (!videoId) {
     loadingEl.style.display = 'none';
     revokedEl.style.display = 'block';
-    document.title = 'ไม่พบวิดีโอ';
+    document.title = t('videoNotFoundTitle');
     return;
   }
 
@@ -578,7 +768,7 @@ async function renderPlayerView(videoId) {
       loadingEl.style.display = 'none';
       activeEl.style.display = 'none';
       revokedEl.style.display = 'block';
-      document.title = 'ไม่พบวิดีโอ';
+      document.title = t('videoNotFoundTitle');
       return;
     }
 
@@ -587,7 +777,7 @@ async function renderPlayerView(videoId) {
       loadingEl.style.display = 'none';
       activeEl.style.display = 'none';
       revokedEl.style.display = 'block';
-      document.title = 'ไม่พบวิดีโอ';
+      document.title = t('videoNotFoundTitle');
       return;
     }
 
@@ -608,7 +798,7 @@ async function renderPlayerView(videoId) {
         if (!r.ok) {
           activeEl.style.display = 'none';
           revokedEl.style.display = 'block';
-          document.title = 'ไม่พบวิดีโอ';
+          document.title = t('videoNotFoundTitle');
         }
       });
     };
@@ -627,7 +817,7 @@ async function renderPlayerView(videoId) {
     console.error('Failed to load video info:', err);
     loadingEl.style.display = 'none';
     revokedEl.style.display = 'block';
-    document.title = 'ไม่พบวิดีโอ';
+    document.title = t('videoNotFoundTitle');
   }
 }
 
@@ -642,16 +832,16 @@ async function openVideoModal(shareId) {
   const modalVideoEl = document.getElementById('modal-video-element');
   const modalSourceEl = document.getElementById('modal-video-source');
 
-  titleEl.textContent = 'กำลังโหลด...';
+  titleEl.textContent = t('loading');
   modal.style.display = 'flex';
 
   try {
     const res = await fetch(`/api/video-info/${shareId}`);
-    if (!res.ok) throw new Error('ไม่สามารถเข้าถึงวิดีโอได้');
+    if (!res.ok) throw new Error(t('videoNotFoundTitle'));
     const info = await res.json();
 
     titleEl.textContent = info.originalName;
-    sizeEl.textContent = `${formatBytes(info.size)} • ดู ${info.views || 0} ครั้ง`;
+    sizeEl.textContent = `${formatBytes(info.size)} • ${t('viewCount', { n: info.views || 0 })}`;
 
     const streamUrl = `/api/stream/${shareId}`;
     modalVideoEl.poster = `/api/thumbnail/${shareId}.jpg`;
@@ -700,55 +890,99 @@ function openModalVideoInNewTab() {
   }
 }
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && activeModalVideoId) {
-    closeVideoModal();
+// ==========================================
+// SETTINGS MODAL & MANAGEMENT
+// ==========================================
+async function initSettings() {
+  // Try loading from Electron IPC or localStorage
+  if (window.electronAPI && typeof window.electronAPI.getSettings === 'function') {
+    try {
+      const electronSettings = await window.electronAPI.getSettings();
+      if (electronSettings) {
+        userSettings = { ...userSettings, ...electronSettings };
+      }
+    } catch (e) {}
+  } else {
+    try {
+      const local = localStorage.getItem('video_streamer_settings');
+      if (local) userSettings = { ...userSettings, ...JSON.parse(local) };
+    } catch (e) {}
   }
-});
 
-// Register local file path directly (for Electron or path input)
-async function registerLocalFilePath(filePath) {
-  if (!filePath) return;
-  const pathInput = document.getElementById('local-path-input');
-  const btn = document.getElementById('btn-add-path');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `${SVG_ICONS.spinner} <span>กำลังแชร์...</span>`;
-  }
+  // Apply settings to checkboxes & language
+  const trayCheckbox = document.getElementById('setting-minimize-tray');
+  if (trayCheckbox) trayCheckbox.checked = Boolean(userSettings.minimizeToTray);
 
-  try {
-    const res = await fetch('/api/shares/local', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filePath })
-    });
+  const autoStartCheckbox = document.getElementById('setting-auto-start');
+  if (autoStartCheckbox) autoStartCheckbox.checked = Boolean(userSettings.autoStart);
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'ไม่สามารถเปิดไฟล์ได้');
-    }
+  const autoCopyCheckbox = document.getElementById('setting-auto-copy');
+  if (autoCopyCheckbox) autoCopyCheckbox.checked = Boolean(userSettings.autoCopy);
 
-    if (pathInput) pathInput.value = '';
-    showToast('แชร์วิดีโอแล้ว', 'success');
-    if (data.share && data.share.id) {
-      extractAndUploadThumbnail(data.share.id, `/api/stream/${data.share.id}`);
-    }
-    loadShares();
-  } catch (err) {
-    alert('เกิดข้อผิดพลาด: ' + err.message);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = `<span>แชร์</span>`;
-    }
+  applyLanguage(userSettings.language || 'th');
+}
+
+function saveCurrentSettings() {
+  if (window.electronAPI && typeof window.electronAPI.saveSettings === 'function') {
+    window.electronAPI.saveSettings(userSettings);
+  } else {
+    try {
+      localStorage.setItem('video_streamer_settings', JSON.stringify(userSettings));
+    } catch (e) {}
   }
 }
+
+function openSettingsModal() {
+  const modal = document.getElementById('settings-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeSettingsModal() {
+  const modal = document.getElementById('settings-modal');
+  if (modal) modal.style.display = 'none';
+  saveCurrentSettings();
+}
+
+function handleSettingsBackdropClick(e) {
+  if (e.target.id === 'settings-modal') {
+    closeSettingsModal();
+  }
+}
+
+function setLanguage(lang) {
+  userSettings.language = lang;
+  applyLanguage(lang);
+  saveCurrentSettings();
+}
+
+function toggleMinimizeToTray(enabled) {
+  userSettings.minimizeToTray = enabled;
+  saveCurrentSettings();
+}
+
+function toggleAutoStart(enabled) {
+  userSettings.autoStart = enabled;
+  saveCurrentSettings();
+}
+
+function toggleAutoCopy(enabled) {
+  userSettings.autoCopy = enabled;
+  saveCurrentSettings();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (activeModalVideoId) closeVideoModal();
+    closeSettingsModal();
+  }
+});
 
 // ==========================================
 // INITIALIZATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
   handleRoute();
+  initSettings();
 
   setInterval(checkStatus, 8000);
 
@@ -757,7 +991,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (dropzone && fileInput) {
     dropzone.addEventListener('click', async () => {
-      // If running inside Electron, show native Windows file picker dialog!
       if (window.electronAPI && typeof window.electronAPI.selectVideoFile === 'function') {
         try {
           const selectedPath = await window.electronAPI.selectVideoFile();
@@ -786,7 +1019,6 @@ document.addEventListener('DOMContentLoaded', () => {
       dropzone.classList.remove('dragover');
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         const file = e.dataTransfer.files[0];
-        // If file.path is available in Electron, share instantly without uploading
         if (file.path && window.electronAPI) {
           registerLocalFilePath(file.path);
         } else {

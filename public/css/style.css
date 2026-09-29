@@ -611,6 +611,17 @@ body.player-mode {
    ========================================================================== */
 .settings-dialog {
   max-width: 520px;
+  background: #ffffff !important;
+}
+
+.settings-dialog .modal-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.settings-dialog .modal-footer {
+  background: #ffffff !important;
+  border-top: 1px solid var(--card-border);
 }
 
 .modal-icon-badge {
@@ -624,13 +635,14 @@ body.player-mode {
 }
 
 .settings-body {
-  padding: 20px 22px;
-  background: #ffffff;
+  padding: 22px 24px;
+  background: #ffffff !important;
   display: flex;
   flex-direction: column;
   gap: 18px;
   max-height: 70vh;
   overflow-y: auto;
+  color: var(--text-main);
 }
 
 .setting-item {
@@ -874,6 +886,7 @@ input:checked + .toggle-slider:before {
   background: var(--bg-subtle);
 }
 
+.video-modal-body,
 .modal-body {
   background: #000000;
   display: flex;
@@ -882,6 +895,7 @@ input:checked + .toggle-slider:before {
   max-height: 70vh;
 }
 
+.video-modal-body video,
 .modal-body video {
   width: 100%;
   max-height: 70vh;

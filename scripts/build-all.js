@@ -28,10 +28,16 @@ console.log('Built dist/Video-Streamer-Installer.exe (Lightweight Web Installer)
 console.log('\n[4/4] Building Electron Portable Executable & Zip...');
 execSync('npx electron-builder --win portable zip', { stdio: 'inherit' });
 
+const defaultZip = path.join(distDir, 'Video Streamer-1.0.0-win.zip');
+const targetZip = path.join(distDir, 'Video-Streamer-win.zip');
+if (fs.existsSync(defaultZip)) {
+  fs.copyFileSync(defaultZip, targetZip);
+}
+
 console.log('\n==============================================');
 console.log('Build Completed Successfully!');
 console.log('Outputs in dist/:');
 console.log('1. dist/Video-Streamer-Installer.exe (26 KB Web Installer / One-Click Launcher)');
 console.log('2. dist/Video-Streamer-Portable.exe (Standalone Portable Executable)');
-console.log('3. dist/Video Streamer-1.0.0-win.zip (GitHub Release Archive)');
+console.log('3. dist/Video-Streamer-win.zip (GitHub Release Archive)');
 console.log('==============================================\n');

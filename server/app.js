@@ -36,9 +36,8 @@ function escapeHtml(str) {
 }
 
 function generatePosterSvg(share) {
-  const filename = escapeHtml(share.originalName || 'Video Stream');
+  const displayTitle = escapeHtml(share.title || share.originalName || 'Video Stream');
   const sizeText = escapeHtml(formatBytes(share.size || 0));
-  const viewsText = `${share.views || 0} views`;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
@@ -72,15 +71,15 @@ function generatePosterSvg(share) {
 
   <!-- File Size & Status Badge -->
   <g transform="translate(600, 375)">
-    <rect x="-140" y="-20" width="280" height="40" rx="20" fill="rgba(56, 189, 248, 0.12)" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
-    <text x="0" y="6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="600" fill="#7dd3fc" text-anchor="middle">
-      ${filename} • ${sizeText}
+    <rect x="-160" y="-20" width="320" height="40" rx="20" fill="rgba(56, 189, 248, 0.12)" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
+    <text x="0" y="6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="17" font-weight="600" fill="#7dd3fc" text-anchor="middle">
+      ${displayTitle} • ${sizeText}
     </text>
   </g>
 
   <!-- Video Title -->
-  <text x="600" y="460" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="700" fill="#ffffff" text-anchor="middle" filter="url(#shadow)">
-    ${filename}
+  <text x="600" y="460" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="32" font-weight="700" fill="#ffffff" text-anchor="middle" filter="url(#shadow)">
+    ${displayTitle}
   </text>
 </svg>`;
 }
@@ -102,33 +101,35 @@ function buildMetaTags(share, req, tunnelManager) {
     `.trim();
   }
 
-  const filename = escapeHtml(share.originalName || 'Video');
+  const displayTitle = escapeHtml(share.title || share.originalName || 'Video');
+  const authorName = escapeHtml(share.author || 'Video Streamer');
   const sizeText = formatBytes(share.size || 0);
   const pageUrl = `${publicBase}/v/${share.id}`;
   const streamUrl = `${publicBase}/api/stream/${share.id}.mp4`;
   const thumbnailUrl = `${publicBase}/api/thumbnail/${share.id}.jpg`;
   const oembedUrl = `${publicBase}/api/oembed?url=${encodeURIComponent(pageUrl)}&format=json`;
   const mimeType = share.mimeType || 'video/mp4';
+  const desc = escapeHtml(share.description || `${displayTitle} • ขนาด ${sizeText}`);
 
   return `
-  <title>${filename}</title>
+  <title>${displayTitle}</title>
   
   <!-- Primary Meta Tags -->
-  <meta name="title" content="${filename}">
-  <meta name="description" content="${filename} (${sizeText})">
+  <meta name="title" content="${displayTitle}">
+  <meta name="description" content="${desc}">
 
   <!-- Open Graph / Facebook / Discord / Telegram / LINE / Messenger -->
-  <meta property="og:site_name" content="${filename}">
+  <meta property="og:site_name" content="${authorName}">
   <meta property="og:type" content="video.other">
   <meta property="og:url" content="${pageUrl}">
-  <meta property="og:title" content="${filename}">
-  <meta property="og:description" content="${filename} • ขนาด ${sizeText}">
+  <meta property="og:title" content="${displayTitle}">
+  <meta property="og:description" content="${desc}">
   <meta property="og:image" content="${thumbnailUrl}">
   <meta property="og:image:secure_url" content="${thumbnailUrl}">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="720">
-  <meta property="og:image:alt" content="${filename}">
+  <meta property="og:image:alt" content="${displayTitle}">
   <meta property="og:video" content="${streamUrl}">
   <meta property="og:video:url" content="${streamUrl}">
   <meta property="og:video:secure_url" content="${streamUrl}">
@@ -138,8 +139,8 @@ function buildMetaTags(share, req, tunnelManager) {
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${filename}">
-  <meta name="twitter:description" content="${filename} • ขนาด ${sizeText}">
+  <meta name="twitter:title" content="${displayTitle}">
+  <meta name="twitter:description" content="${desc}">
   <meta name="twitter:image" content="${thumbnailUrl}">
   <meta name="twitter:image:src" content="${thumbnailUrl}">
   <meta name="twitter:player" content="${pageUrl}">
@@ -149,7 +150,7 @@ function buildMetaTags(share, req, tunnelManager) {
   <meta name="twitter:player:stream:content_type" content="${mimeType}">
 
   <!-- oEmbed Discovery for Discord & Social Players -->
-  <link rel="alternate" type="application/json+oembed" href="${oembedUrl}" title="${filename}">
+  <link rel="alternate" type="application/json+oembed" href="${oembedUrl}" title="${displayTitle}">
   `.trim();
 }
 
@@ -227,7 +228,11 @@ function createApp(options = {}) {
 
     return {
       id: share.id,
+      filePath: share.filePath,
       originalName: share.originalName,
+      title: share.title || share.originalName,
+      description: share.description || '',
+      author: share.author || '',
       size: share.size,
       mimeType: share.mimeType,
       createdAt: share.createdAt,
@@ -266,6 +271,9 @@ function createApp(options = {}) {
       const share = registry.register({
         filePath: req.file.path,
         originalName: req.file.originalname,
+        title: req.body.title,
+        description: req.body.description,
+        author: req.body.author,
         size: req.file.size,
         mimeType: req.file.mimetype,
         isUploaded: true
@@ -292,7 +300,7 @@ function createApp(options = {}) {
 
   // 4. Register local file path directly (instant, zero-copy for huge files)
   app.post('/api/shares/local', (req, res) => {
-    const { filePath } = req.body;
+    const { filePath, title, description, author } = req.body;
     if (!filePath || typeof filePath !== 'string') {
       return res.status(400).json({ error: 'filePath is required' });
     }
@@ -311,6 +319,9 @@ function createApp(options = {}) {
       const share = registry.register({
         filePath: cleanPath,
         originalName: path.basename(cleanPath),
+        title,
+        description,
+        author,
         size: stat.size,
         isUploaded: false
       });
@@ -334,7 +345,23 @@ function createApp(options = {}) {
     }
   });
 
-  // 5. Revoke / Delete a share
+  // 5. Update video title & metadata (for custom preview cards / Open Graph)
+  const handleUpdateMeta = (req, res) => {
+    const { id } = req.params;
+    const { title, description, author } = req.body;
+    const updated = registry.updateMeta(id, { title, description, author });
+    if (!updated) {
+      return res.status(404).json({ error: 'Share not found or has been revoked' });
+    }
+    res.json({
+      success: true,
+      share: formatShare(updated, req)
+    });
+  };
+  app.patch('/api/shares/:id', handleUpdateMeta);
+  app.post('/api/shares/:id/meta', handleUpdateMeta);
+
+  // 6. Revoke / Delete a share
   app.delete('/api/shares/:id', (req, res) => {
     const { id } = req.params;
     const removed = registry.revoke(id, true);
@@ -344,7 +371,7 @@ function createApp(options = {}) {
     res.json({ success: true, id, message: 'Share removed and link invalidated' });
   });
 
-  // 6. Shorten public link using spoo.me
+  // 6. Shorten public link using multi-provider shortener (spoo.me, CleanURI, clck.ru, TinyURL)
   app.post('/api/shares/:id/shorten', async (req, res) => {
     const { id } = req.params;
     const share = registry.get(id);
@@ -378,7 +405,7 @@ function createApp(options = {}) {
       });
     } catch (err) {
       res.status(502).json({
-        error: 'Failed to shorten URL with spoo.me: ' + err.message,
+        error: err.message || 'Failed to shorten URL',
         targetUrl
       });
     }
@@ -542,10 +569,10 @@ function createApp(options = {}) {
     res.json({
       version: '1.0',
       type: 'video',
-      title: share.originalName,
-      author_name: 'แสดงตัวอย่างวิดีโอ',
+      title: share.title || share.originalName,
+      author_name: share.author || 'Video Streamer',
       author_url: publicBase,
-      provider_name: 'แสดงตัวอย่างวิดีโอ',
+      provider_name: 'Video Streamer',
       provider_url: publicBase,
       thumbnail_url: thumbnailUrl,
       thumbnail_width: 1280,

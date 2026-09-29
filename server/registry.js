@@ -25,6 +25,9 @@ class VideoRegistry {
         if (Array.isArray(list)) {
           for (const item of list) {
             if (fs.existsSync(item.filePath)) {
+              if (!item.title) {
+                item.title = item.originalName;
+              }
               this.shares.set(item.id, item);
             }
           }
@@ -45,7 +48,7 @@ class VideoRegistry {
     }
   }
 
-  register({ filePath, originalName, size, mimeType, isUploaded = false }) {
+  register({ filePath, originalName, title, description, author, size, mimeType, isUploaded = false }) {
     if (!filePath || !fs.existsSync(filePath)) {
       throw new Error('Video file does not exist on disk: ' + filePath);
     }
@@ -53,12 +56,16 @@ class VideoRegistry {
     const stat = fs.statSync(filePath);
     const resolvedSize = size || stat.size;
     const resolvedName = originalName || path.basename(filePath);
+    const resolvedTitle = (title && typeof title === 'string' && title.trim()) ? title.trim() : resolvedName;
     const id = 'v_' + crypto.randomBytes(6).toString('hex');
 
     const share = {
       id,
       filePath: path.resolve(filePath),
       originalName: resolvedName,
+      title: resolvedTitle,
+      description: (typeof description === 'string') ? description.trim() : '',
+      author: (typeof author === 'string') ? author.trim() : '',
       size: resolvedSize,
       mimeType: mimeType || this.detectMimeType(resolvedName),
       isUploaded: Boolean(isUploaded),
@@ -87,7 +94,27 @@ class VideoRegistry {
       this.revoke(id, false);
       return null;
     }
+    if (!share.title) {
+      share.title = share.originalName;
+    }
     return share;
+  }
+
+  updateMeta(id, { title, description, author } = {}) {
+    const item = this.get(id);
+    if (!item) return null;
+    if (typeof title === 'string') {
+      const clean = title.trim();
+      item.title = clean || item.originalName;
+    }
+    if (typeof description === 'string') {
+      item.description = description.trim();
+    }
+    if (typeof author === 'string') {
+      item.author = author.trim();
+    }
+    this.save();
+    return item;
   }
 
   list() {
@@ -95,6 +122,7 @@ class VideoRegistry {
     const valid = [];
     for (const [id, item] of this.shares.entries()) {
       if (fs.existsSync(item.filePath)) {
+        if (!item.title) item.title = item.originalName;
         valid.push({ ...item });
       } else {
         this.shares.delete(id);

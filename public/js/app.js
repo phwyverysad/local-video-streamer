@@ -34,6 +34,17 @@ const I18N = {
     btnShortened: 'ย่อแล้ว',
     btnOpen: 'เปิด',
     btnDelete: 'ลบ',
+    btnEdit: 'แก้ไขชื่อตัวอย่าง',
+    btnSave: 'บันทึก',
+    btnCancel: 'ยกเลิก',
+    labelCustomTitle: 'ชื่อตัวอย่างลิงก์ (แสดงบน Discord / โซเชียล)',
+    hintOptional: '(ไม่บังคับ)',
+    placeholderCustomTitle: 'เช่น สอนใช้งาน EP.1, ไฮไลท์การเล่น (เว้นว่าง = ใช้ชื่อไฟล์)',
+    editModalTitle: 'แก้ไขชื่อตัวอย่างลิงก์',
+    labelVideoTitle: 'ชื่อวิดีโอ (แสดงบน Discord, Facebook, Twitter, LINE)',
+    editTitleNote: 'ชื่อนี้จะปรากฏที่หัวข้อลิงก์และหน้าต่างตัวอย่างบน Discord ทันที',
+    labelOriginalFile: 'ไฟล์ต้นฉบับในเครื่อง',
+    toastTitleUpdated: 'อัปเดตชื่อตัวอย่างลิงก์เรียบร้อยแล้ว',
     viewCount: 'ดู {n} ครั้ง',
     toastCopied: 'คัดลอกลิงก์แล้ว',
     toastShortened: 'ย่อและคัดลอกลิงก์แล้ว',
@@ -79,6 +90,17 @@ const I18N = {
     btnShortened: 'Shortened',
     btnOpen: 'Open',
     btnDelete: 'Delete',
+    btnEdit: 'Edit Preview Title',
+    btnSave: 'Save',
+    btnCancel: 'Cancel',
+    labelCustomTitle: 'Link Preview Title (Discord / Social)',
+    hintOptional: '(Optional)',
+    placeholderCustomTitle: 'e.g. Tutorial EP.1, Gameplay Highlight (Empty = use filename)',
+    editModalTitle: 'Edit Link Preview Title',
+    labelVideoTitle: 'Video Title (Shown on Discord / Social Media)',
+    editTitleNote: 'This title will be displayed directly in Discord embeds & link preview cards',
+    labelOriginalFile: 'Original File Name',
+    toastTitleUpdated: 'Link preview title updated successfully',
     viewCount: '{n} views',
     toastCopied: 'Link copied to clipboard',
     toastShortened: 'Link shortened and copied',
@@ -115,6 +137,16 @@ function t(key, vars = {}) {
   return text;
 }
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function applyLanguage(lang) {
   currentLang = (lang === 'en') ? 'en' : 'th';
   document.documentElement.lang = currentLang;
@@ -124,6 +156,14 @@ function applyLanguage(lang) {
     const key = el.getAttribute('data-i18n');
     if (key) {
       el.textContent = t(key);
+    }
+  });
+
+  // Update all data-i18n-placeholder elements
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (key) {
+      el.placeholder = t(key);
     }
   });
 
@@ -151,6 +191,7 @@ const SVG_ICONS = {
   scissors: `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>`,
   external: `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`,
   trash: `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
+  edit: `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`,
   check: `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
   spinner: `<svg class="svg-icon animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`,
   folder: `<svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`,
@@ -172,12 +213,23 @@ function showToast(message, type = 'info') {
   const toastIcon = document.getElementById('toast-icon');
 
   toastText.textContent = message;
-  toastIcon.innerHTML = type === 'success' ? SVG_ICONS.check : SVG_ICONS.copy;
+  toast.classList.remove('toast-error');
+
+  if (type === 'error') {
+    toast.classList.add('toast-error');
+    toastIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+  } else if (type === 'success') {
+    toastIcon.innerHTML = SVG_ICONS.check;
+  } else {
+    toastIcon.innerHTML = SVG_ICONS.copy;
+  }
 
   toast.classList.add('show');
-  setTimeout(() => {
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => {
     toast.classList.remove('show');
-  }, 2400);
+    toast.classList.remove('toast-error');
+  }, 3200);
 }
 
 // ==========================================
@@ -475,6 +527,8 @@ function renderSharesList() {
     const activeUrl = share.shortUrl || share.publicUrl;
     const isShortened = Boolean(share.shortUrl);
     const viewText = t('viewCount', { n: share.views || 0 });
+    const displayTitle = escapeHtml(share.title || share.originalName);
+    const hasCustomTitle = Boolean(share.title && share.title !== share.originalName);
 
     return `
       <div class="share-item" id="share-card-${share.id}">
@@ -485,7 +539,13 @@ function renderSharesList() {
               <span style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;">${SVG_ICONS.play}</span>
             </div>
             <div class="video-info">
-              <h3 title="${share.originalName}">${share.originalName}</h3>
+              <div class="video-title-row">
+                <h3 title="${displayTitle}">${displayTitle}</h3>
+                <button class="btn-edit-title" onclick="openEditModal('${share.id}')" title="${t('btnEdit')}">
+                  ${SVG_ICONS.edit}
+                </button>
+              </div>
+              ${hasCustomTitle ? `<div class="video-original-name" title="${escapeHtml(share.originalName)}">(${escapeHtml(share.originalName)})</div>` : ''}
               <div class="video-details">
                 <span>${formatBytes(share.size)}</span>
                 <span>•</span>
@@ -602,7 +662,7 @@ async function shortenShareLink(id) {
     const target = currentShares.find(s => s.id === id);
     if (target) target.shortUrl = data.shortUrl;
   } catch (err) {
-    alert(err.message);
+    showToast(err.message || 'Failed to shorten link', 'error');
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = `${SVG_ICONS.scissors} <span>${t('btnShorten')}</span>`;
@@ -627,7 +687,88 @@ async function revokeShare(id) {
     currentShares = currentShares.filter(s => s.id !== id);
     renderSharesList();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message || 'Failed to delete video', 'error');
+  }
+}
+
+// Edit Title & Metadata Modal Handlers
+let currentEditingShareId = null;
+
+function openEditModal(id) {
+  const share = currentShares.find(s => s.id === id);
+  if (!share) return;
+  currentEditingShareId = id;
+  const modal = document.getElementById('edit-modal');
+  const titleInput = document.getElementById('edit-title-input');
+  const origFile = document.getElementById('edit-original-filename');
+
+  if (titleInput) titleInput.value = share.title || share.originalName;
+  if (origFile) origFile.textContent = share.originalName;
+
+  if (modal) {
+    modal.style.display = 'flex';
+    setTimeout(() => {
+      if (titleInput) {
+        titleInput.focus();
+        titleInput.select();
+      }
+    }, 60);
+  }
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('edit-modal');
+  if (modal) modal.style.display = 'none';
+  currentEditingShareId = null;
+}
+
+function handleEditBackdropClick(e) {
+  if (e && e.target && e.target.id === 'edit-modal') {
+    closeEditModal();
+  }
+}
+
+async function submitEditTitle(e) {
+  if (e) e.preventDefault();
+  if (!currentEditingShareId) return;
+
+  const titleInput = document.getElementById('edit-title-input');
+  const newTitle = titleInput ? titleInput.value.trim() : '';
+  const saveBtn = document.getElementById('btn-save-title');
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `${SVG_ICONS.spinner} <span>${t('loading')}</span>`;
+  }
+
+  try {
+    const res = await fetch(`/api/shares/${currentEditingShareId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: newTitle })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to update title');
+    }
+
+    // Update in memory currentShares
+    const target = currentShares.find(s => s.id === currentEditingShareId);
+    if (target && data.share) {
+      target.title = data.share.title;
+    }
+
+    closeEditModal();
+    showToast(t('toastTitleUpdated'), 'success');
+    renderSharesList();
+  } catch (err) {
+    showToast(err.message || 'Failed to update title', 'error');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = `<span>${t('btnSave')}</span>`;
+    }
   }
 }
 
@@ -639,6 +780,8 @@ function uploadVideoFile(file) {
   const progressFill = document.getElementById('progress-fill');
   const progressText = document.getElementById('progress-text');
   const progressPercent = document.getElementById('progress-percent');
+  const customTitleInput = document.getElementById('custom-title-input');
+  const customTitle = customTitleInput ? customTitleInput.value.trim() : '';
 
   progressWrap.style.display = 'block';
   progressFill.style.width = '0%';
@@ -647,6 +790,9 @@ function uploadVideoFile(file) {
 
   const formData = new FormData();
   formData.append('video', file);
+  if (customTitle) {
+    formData.append('title', customTitle);
+  }
 
   const xhr = new XMLHttpRequest();
   xhr.open('POST', '/api/shares/upload', true);
@@ -662,6 +808,7 @@ function uploadVideoFile(file) {
   xhr.onload = () => {
     progressWrap.style.display = 'none';
     if (xhr.status === 201) {
+      if (customTitleInput) customTitleInput.value = '';
       showToast(t('toastUploaded'), 'success');
       try {
         const res = JSON.parse(xhr.responseText);
@@ -680,13 +827,13 @@ function uploadVideoFile(file) {
         const res = JSON.parse(xhr.responseText);
         if (res.error) errMsg = res.error;
       } catch (e) {}
-      alert(errMsg);
+      showToast(errMsg, 'error');
     }
   };
 
   xhr.onerror = () => {
     progressWrap.style.display = 'none';
-    alert('Connection failed');
+    showToast('Connection failed', 'error');
   };
 
   xhr.send(formData);
@@ -696,7 +843,10 @@ function uploadVideoFile(file) {
 async function registerLocalFilePath(filePath) {
   if (!filePath) return;
   const pathInput = document.getElementById('local-path-input');
+  const customTitleInput = document.getElementById('custom-title-input');
+  const customTitle = customTitleInput ? customTitleInput.value.trim() : '';
   const btn = document.getElementById('btn-add-path');
+
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = `${SVG_ICONS.spinner} <span>${t('loading')}</span>`;
@@ -706,7 +856,7 @@ async function registerLocalFilePath(filePath) {
     const res = await fetch('/api/shares/local', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filePath })
+      body: JSON.stringify({ filePath, title: customTitle })
     });
 
     const data = await res.json();
@@ -715,6 +865,7 @@ async function registerLocalFilePath(filePath) {
     }
 
     if (pathInput) pathInput.value = '';
+    if (customTitleInput) customTitleInput.value = '';
     showToast(t('toastShared'), 'success');
     
     if (data.share && data.share.id) {
@@ -726,7 +877,7 @@ async function registerLocalFilePath(filePath) {
     }
     loadShares();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message || 'Failed to share file', 'error');
   } finally {
     if (btn) {
       btn.disabled = false;

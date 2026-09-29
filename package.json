@@ -52,9 +52,6 @@
     "portable": {
       "artifactName": "Video-Streamer-Portable.exe"
     },
-    "zip": {
-      "artifactName": "Video-Streamer-win.zip"
-    },
     "extraResources": [
       {
         "from": "node_modules/cloudflared/bin/cloudflared.exe",

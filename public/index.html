@@ -54,6 +54,29 @@
           </div>
         </div>
 
+        <!-- Optional Custom Title for Link Preview / Discord Embed -->
+        <div class="custom-title-section">
+          <div class="custom-title-header">
+            <label for="custom-title-input" class="custom-title-label">
+              <svg class="svg-icon svg-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+              <span data-i18n="labelCustomTitle">ชื่อตัวอย่างลิงก์ (แสดงบน Discord / โซเชียล)</span>
+            </label>
+            <span class="custom-title-hint" data-i18n="hintOptional">(ไม่บังคับ)</span>
+          </div>
+          <div class="custom-title-input-wrap">
+            <input 
+              type="text" 
+              id="custom-title-input" 
+              class="custom-title-input" 
+              placeholder="เช่น สอนใช้งาน EP.1, ไฮไลท์การเล่น (เว้นว่าง = ใช้ชื่อไฟล์)" 
+              data-i18n-placeholder="placeholderCustomTitle"
+            >
+          </div>
+        </div>
+
         <!-- Or use local file path directly -->
         <div class="divider">
           <span data-i18n="dividerPath">หรือใส่พาธไฟล์ในเครื่อง</span>
@@ -281,6 +304,50 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT TITLE & METADATA -->
+  <div id="edit-modal" class="modal-backdrop" style="display: none;" onclick="handleEditBackdropClick(event)">
+    <div class="modal-dialog edit-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon-badge">
+            <svg class="svg-icon svg-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </div>
+          <span data-i18n="editModalTitle">แก้ไขชื่อตัวอย่างลิงก์</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeEditModal()" title="ปิด">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <form id="edit-title-form" onsubmit="submitEditTitle(event)">
+        <div class="edit-body">
+          <div class="edit-field-group">
+            <label class="edit-field-label" data-i18n="labelVideoTitle">ชื่อวิดีโอ (แสดงบน Discord, Facebook, Twitter, LINE)</label>
+            <input type="text" id="edit-title-input" class="edit-input" required placeholder="ใส่ชื่อที่ต้องการแสดงในตัวอย่างลิงก์">
+            <span class="edit-field-note" data-i18n="editTitleNote">ชื่อนี้จะปรากฏที่หัวข้อลิงก์และหน้าต่างตัวอย่างบน Discord ทันที</span>
+          </div>
+          <div class="edit-field-group">
+            <label class="edit-field-label" data-i18n="labelOriginalFile">ไฟล์ต้นฉบับในเครื่อง</label>
+            <div id="edit-original-filename" class="edit-readonly-box">-</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeEditModal()">
+            <span data-i18n="btnCancel">ยกเลิก</span>
+          </button>
+          <button type="submit" id="btn-save-title" class="btn btn-primary btn-sm">
+            <span data-i18n="btnSave">บันทึก</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

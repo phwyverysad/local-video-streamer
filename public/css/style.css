@@ -233,6 +233,68 @@ body.player-mode {
   margin-top: 5px;
 }
 
+/* Custom Title Section */
+.custom-title-section {
+  margin-top: 14px;
+  background: #f8fafc;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+}
+
+.custom-title-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.custom-title-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.custom-title-label .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.custom-title-hint {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.custom-title-input-wrap {
+  width: 100%;
+}
+
+.custom-title-input {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--card-border);
+  color: var(--text-main);
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.custom-title-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.custom-title-input::placeholder {
+  color: var(--text-sub);
+  font-size: 12px;
+}
+
 /* Divider */
 .divider {
   display: flex;
@@ -480,6 +542,13 @@ body.player-mode {
   flex: 1;
 }
 
+.video-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
 .video-info h3 {
   font-size: 13.5px;
   font-weight: 600;
@@ -487,7 +556,42 @@ body.player-mode {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 2px;
+  margin: 0;
+}
+
+.btn-edit-title {
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-edit-title:hover {
+  opacity: 1;
+  color: var(--primary);
+  background: var(--primary-bg);
+}
+
+.btn-edit-title .svg-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.video-original-name {
+  font-size: 11px;
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
 }
 
 .video-details {
@@ -914,6 +1018,64 @@ input:checked + .toggle-slider:before {
   background: #ffffff;
 }
 
+/* Edit Dialog & Fields */
+.edit-dialog {
+  max-width: 480px;
+}
+
+.edit-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #ffffff;
+}
+
+.edit-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edit-field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.edit-input {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--card-border);
+  color: var(--text-main);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.edit-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.edit-field-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.edit-readonly-box {
+  padding: 7px 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
 /* ==========================================================================
    TOAST
    ========================================================================== */
@@ -941,6 +1103,11 @@ input:checked + .toggle-slider:before {
 .toast.show {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+.toast.toast-error {
+  background: #ef4444;
+  color: #ffffff;
 }
 
 /* ==========================================================================

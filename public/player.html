@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>กำลังโหลดวิดีโอ... - Local Video Streamer</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      background-color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .player-container {
+      width: 100%;
+      max-width: 900px;
+    }
+  </style>
+</head>
+<body>
+  <div class="player-container">
+    <!-- Active Player State -->
+    <div id="player-active" style="display: none;">
+      <div class="video-wrapper">
+        <video id="video-element" controls playsinline preload="metadata">
+          <source id="video-source" src="" type="video/mp4">
+          เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอนี้
+        </video>
+      </div>
+
+      <div class="player-info">
+        <div>
+          <h2 id="video-title" style="font-size: 18px; font-weight: 700; color: #0f172a; word-break: break-all;">ชื่อวิดีโอ</h2>
+          <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px; display: flex; gap: 12px;">
+            <span id="video-size">ขนาด: -</span>
+            <span id="video-views">เข้าชม: 0 ครั้ง</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 12px; background: var(--success-light); color: #065f46; padding: 4px 10px; border-radius: 9999px; font-weight: 600;">
+            🟢 กำลังสตรีมสดจากเครื่องเจ้าของ
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revoked / Not Found State -->
+    <div id="player-revoked" class="revoked-box" style="display: none;">
+      <div class="revoked-icon">🚫</div>
+      <div class="revoked-title">วิดีโอนี้ไม่สามารถรับชมได้แล้ว</div>
+      <p class="revoked-desc">
+        เจ้าของยกเลิกการแชร์หรือลบไฟล์ออกจากเครื่องเรียบร้อยแล้ว ลิงก์สาธารณะนี้จึงถูกปิดการเข้าถึงโดยสมบูรณ์
+      </p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="player-loading" style="text-align: center; padding: 60px 20px;">
+      <div style="font-size: 36px; animation: spin 1s infinite linear;">⏳</div>
+      <p style="margin-top: 12px; font-size: 14px; color: var(--text-muted);">กำลังเชื่อมต่อกับเครื่องต้นทางเพื่อเตรียมเล่นคลิป...</p>
+    </div>
+  </div>
+
+  <script src="/js/player.js"></script>
+</body>
+</html>

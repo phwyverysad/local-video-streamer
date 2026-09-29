@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Video Streamer - สตรีมคลิปตรงจากเครื่อง</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo-area">
+        <div class="logo-icon">🎬</div>
+        <div class="logo-title">
+          <h1>Local Video Streamer</h1>
+          <p>ส่งคลิปขนาดใหญ่ให้เพื่อนดูได้ทันที โดยไม่ต้องอัปโหลดขึ้นคลาวด์</p>
+        </div>
+      </div>
+      <div id="tunnel-badge" class="tunnel-badge">
+        <span class="dot"></span>
+        <span id="tunnel-text">กำลังตรวจสอบสถานะ...</span>
+      </div>
+    </header>
+
+    <!-- Upload / Add Video Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>📤</span> เลือกวิดีโอเพื่อสร้างลิงก์สาธารณะ
+      </div>
+
+      <!-- Drag & Drop Zone -->
+      <div id="dropzone" class="dropzone">
+        <div class="dropzone-icon">📁</div>
+        <div class="dropzone-text">ลากไฟล์วิดีโอมาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</div>
+        <div class="dropzone-sub">รองรับ MP4, MKV, MOV, WebM (สตรีมได้ทุกขนาด ไม่จำกัดความยาว)</div>
+        <input type="file" id="file-input" accept="video/*">
+      </div>
+
+      <!-- Upload Progress Bar -->
+      <div id="progress-container" class="progress-container">
+        <div class="progress-bar-wrap">
+          <div id="progress-fill" class="progress-bar-fill"></div>
+        </div>
+        <div class="progress-label">
+          <span id="progress-text">กำลังเตรียมไฟล์...</span>
+          <span id="progress-percent">0%</span>
+        </div>
+      </div>
+
+      <!-- Or use local file path directly (0 copy delay) -->
+      <div class="divider-text">
+        <span>หรือระบุที่อยู่ไฟล์ในเครื่องโดยตรง (ไม่ต้องรอคัดลอกไฟล์)</span>
+      </div>
+      <form id="local-path-form" class="path-form">
+        <input 
+          type="text" 
+          id="local-path-input" 
+          class="path-input" 
+          placeholder="เช่น C:\Videos\clip.mp4 (ลากไฟล์มาวางในช่องนี้ได้)" 
+          required
+        >
+        <button type="submit" id="btn-add-path" class="btn btn-primary">
+          <span>⚡</span> สร้างลิงก์ทันที
+        </button>
+      </form>
+    </div>
+
+    <!-- Active Shares List Card -->
+    <div class="card">
+      <div class="card-title" style="justify-content: space-between;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span>🔗</span> รายการวิดีโอที่กำลังแชร์
+        </div>
+        <span id="shares-count" style="font-size:12px; font-weight:normal; color:var(--text-muted);">0 รายการ</span>
+      </div>
+
+      <div id="shares-list" class="shares-list">
+        <!-- Rendered dynamically via app.js -->
+        <div class="empty-state">
+          <div class="empty-state-icon">🎥</div>
+          <p>ยังไม่มีวิดีโอที่กำลังแชร์</p>
+          <p style="font-size: 12px; margin-top: 4px;">เลือกไฟล์ด้านบนเพื่อสร้างลิงก์ให้เพื่อนได้ทันที</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast">ข้อความแจ้งเตือน</div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

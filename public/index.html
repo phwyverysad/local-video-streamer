@@ -3,91 +3,187 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Local Video Streamer - สตรีมคลิปตรงจากเครื่อง</title>
+  <title>Video Streamer</title>
+  <link rel="icon" type="image/png" href="/icon.png">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <header>
-      <div class="logo-area">
-        <div class="logo-icon">🎬</div>
-        <div class="logo-title">
-          <h1>Local Video Streamer</h1>
-          <p>ส่งคลิปขนาดใหญ่ให้เพื่อนดูได้ทันที โดยไม่ต้องอัปโหลดขึ้นคลาวด์</p>
+  <main class="container">
+    <!-- VIEW 1: DASHBOARD VIEW -->
+    <div id="view-dashboard">
+      <!-- Upload / Add Video Card -->
+      <section class="card upload-card">
+        <div class="card-top-bar">
+          <div class="card-caption">
+            <svg class="svg-icon svg-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>แชร์วิดีโอ</span>
+          </div>
+          <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span id="status-text">พร้อมใช้งาน</span>
+          </div>
         </div>
-      </div>
-      <div id="tunnel-badge" class="tunnel-badge">
-        <span class="dot"></span>
-        <span id="tunnel-text">กำลังตรวจสอบสถานะ...</span>
-      </div>
-    </header>
 
-    <!-- Upload / Add Video Card -->
-    <div class="card">
-      <div class="card-title">
-        <span>📤</span> เลือกวิดีโอเพื่อสร้างลิงก์สาธารณะ
-      </div>
-
-      <!-- Drag & Drop Zone -->
-      <div id="dropzone" class="dropzone">
-        <div class="dropzone-icon">📁</div>
-        <div class="dropzone-text">ลากไฟล์วิดีโอมาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</div>
-        <div class="dropzone-sub">รองรับ MP4, MKV, MOV, WebM (สตรีมได้ทุกขนาด ไม่จำกัดความยาว)</div>
-        <input type="file" id="file-input" accept="video/*">
-      </div>
-
-      <!-- Upload Progress Bar -->
-      <div id="progress-container" class="progress-container">
-        <div class="progress-bar-wrap">
-          <div id="progress-fill" class="progress-bar-fill"></div>
+        <!-- Drag & Drop Zone -->
+        <div id="dropzone" class="dropzone" role="button" tabindex="0">
+          <div class="dropzone-icon-wrap">
+            <svg class="svg-icon dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <div class="dropzone-text">วางไฟล์วิดีโอ หรือ คลิกเพื่อเลือก</div>
+          <div class="dropzone-sub">รองรับ MP4 • MKV • MOV • WebM</div>
+          <input type="file" id="file-input" accept="video/*">
         </div>
-        <div class="progress-label">
-          <span id="progress-text">กำลังเตรียมไฟล์...</span>
-          <span id="progress-percent">0%</span>
-        </div>
-      </div>
 
-      <!-- Or use local file path directly (0 copy delay) -->
-      <div class="divider-text">
-        <span>หรือระบุที่อยู่ไฟล์ในเครื่องโดยตรง (ไม่ต้องรอคัดลอกไฟล์)</span>
-      </div>
-      <form id="local-path-form" class="path-form">
-        <input 
-          type="text" 
-          id="local-path-input" 
-          class="path-input" 
-          placeholder="เช่น C:\Videos\clip.mp4 (ลากไฟล์มาวางในช่องนี้ได้)" 
-          required
-        >
-        <button type="submit" id="btn-add-path" class="btn btn-primary">
-          <span>⚡</span> สร้างลิงก์ทันที
-        </button>
-      </form>
+        <!-- Upload Progress Bar -->
+        <div id="progress-container" class="progress-container" style="display: none;">
+          <div class="progress-bar-wrap">
+            <div id="progress-fill" class="progress-bar-fill"></div>
+          </div>
+          <div class="progress-label">
+            <span id="progress-text">กำลังโหลด...</span>
+            <span id="progress-percent">0%</span>
+          </div>
+        </div>
+
+        <!-- Or use local file path directly -->
+        <div class="divider">
+          <span>หรือใส่พาธไฟล์ในเครื่อง</span>
+        </div>
+
+        <form id="local-path-form" class="path-form">
+          <div class="path-input-wrap">
+            <svg class="svg-icon path-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <input 
+              type="text" 
+              id="local-path-input" 
+              class="path-input" 
+              placeholder="C:\Videos\clip.mp4" 
+              required
+            >
+          </div>
+          <button type="submit" id="btn-add-path" class="btn btn-primary">
+            <span>แชร์</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Active Shares List Card -->
+      <section class="card">
+        <div class="section-header">
+          <span class="section-title">วิดีโอทั้งหมด</span>
+          <span id="shares-count" class="badge">0 ไฟล์</span>
+        </div>
+
+        <div id="shares-list" class="shares-list">
+          <!-- Rendered dynamically via app.js -->
+          <div class="empty-state">
+            <div class="empty-icon-wrap">
+              <svg class="svg-icon svg-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
+            </div>
+            <p>ยังไม่มีวิดีโอที่แชร์</p>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <!-- Active Shares List Card -->
-    <div class="card">
-      <div class="card-title" style="justify-content: space-between;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span>🔗</span> รายการวิดีโอที่กำลังแชร์
+    <!-- VIEW 2: DEDICATED PLAYER VIEW -->
+    <div id="view-player" style="display: none;">
+      <div id="player-active" class="player-container" style="display: none;">
+        <div class="video-wrapper" id="main-video-wrapper">
+          <video 
+            id="video-element" 
+            controls 
+            playsinline 
+            webkit-playsinline="true" 
+            preload="auto"
+          >
+            <source id="video-source" src="" type="video/mp4">
+            เบราว์เซอร์ไม่รองรับการเล่นวิดีโอนี้
+          </video>
         </div>
-        <span id="shares-count" style="font-size:12px; font-weight:normal; color:var(--text-muted);">0 รายการ</span>
       </div>
 
-      <div id="shares-list" class="shares-list">
-        <!-- Rendered dynamically via app.js -->
-        <div class="empty-state">
-          <div class="empty-state-icon">🎥</div>
-          <p>ยังไม่มีวิดีโอที่กำลังแชร์</p>
-          <p style="font-size: 12px; margin-top: 4px;">เลือกไฟล์ด้านบนเพื่อสร้างลิงก์ให้เพื่อนได้ทันที</p>
+      <div id="player-revoked" class="revoked-box" style="display: none;">
+        <div class="revoked-icon">
+          <svg class="svg-icon-xl" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        </div>
+        <h2 class="revoked-title">ไม่พบวิดีโอ</h2>
+        <p class="revoked-desc">ไฟล์ถูกยกเลิกการแชร์หรือลบแล้ว</p>
+      </div>
+
+      <div id="player-loading" class="loading-box">
+        <div class="loading-spinner">
+          <svg class="svg-icon-xl animate-spin" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+          </svg>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted);">กำลังโหลด...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL VIDEO PLAYER -->
+  <div id="video-modal" class="modal-backdrop" style="display: none;" onclick="handleModalBackdropClick(event)">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <svg class="svg-icon svg-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span id="modal-video-title">เล่นตัวอย่าง</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeVideoModal()" title="ปิด">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="video-wrapper">
+          <video id="modal-video-element" controls playsinline preload="auto">
+            <source id="modal-video-source" src="" type="video/mp4">
+            เบราว์เซอร์ไม่รองรับการเล่นวิดีโอนี้
+          </video>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span id="modal-video-size">-</span>
+        <div style="display: flex; gap: 8px;">
+          <button id="modal-btn-open-tab" class="btn btn-secondary btn-sm" onclick="openModalVideoInNewTab()">
+            <span>เปิดแท็บใหม่</span>
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="closeVideoModal()">
+            <span>ปิด</span>
+          </button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Toast Notification -->
-  <div id="toast">ข้อความแจ้งเตือน</div>
+  <div id="toast" class="toast">
+    <div id="toast-icon"></div>
+    <span id="toast-text">แจ้งเตือน</span>
+  </div>
 
   <script src="/js/app.js"></script>
 </body>

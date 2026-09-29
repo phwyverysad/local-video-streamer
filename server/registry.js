@@ -10,6 +10,10 @@ class VideoRegistry {
   }
 
   initStorage() {
+    this.reloadFromDisk();
+  }
+
+  reloadFromDisk() {
     try {
       const dir = path.dirname(this.storageFile);
       if (!fs.existsSync(dir)) {
@@ -20,7 +24,6 @@ class VideoRegistry {
         const list = JSON.parse(raw);
         if (Array.isArray(list)) {
           for (const item of list) {
-            // Check if file still exists on disk
             if (fs.existsSync(item.filePath)) {
               this.shares.set(item.id, item);
             }
@@ -29,7 +32,7 @@ class VideoRegistry {
       }
     } catch (err) {
       console.warn('[VideoRegistry] Failed to load stored shares, starting fresh:', err.message);
-      this.shares = new Map();
+      if (!this.shares) this.shares = new Map();
     }
   }
 
@@ -70,11 +73,16 @@ class VideoRegistry {
   }
 
   get(id) {
-    if (!id || !this.shares.has(id)) {
+    if (!id) return null;
+    
+    // Always check memory first, then reload from disk if missing
+    if (!this.shares.has(id)) {
+      this.reloadFromDisk();
+    }
+    if (!this.shares.has(id)) {
       return null;
     }
     const share = this.shares.get(id);
-    // Double-check file existence
     if (!fs.existsSync(share.filePath)) {
       this.revoke(id, false);
       return null;
@@ -83,6 +91,7 @@ class VideoRegistry {
   }
 
   list() {
+    this.reloadFromDisk();
     const valid = [];
     for (const [id, item] of this.shares.entries()) {
       if (fs.existsSync(item.filePath)) {
@@ -96,11 +105,20 @@ class VideoRegistry {
 
   revoke(id, deletePhysicalFile = false) {
     if (!this.shares.has(id)) {
+      this.reloadFromDisk();
+    }
+    if (!this.shares.has(id)) {
       return false;
     }
     const item = this.shares.get(id);
     this.shares.delete(id);
     this.save();
+
+    if (item.thumbnailPath && fs.existsSync(item.thumbnailPath)) {
+      try {
+        fs.unlinkSync(item.thumbnailPath);
+      } catch (err) {}
+    }
 
     if ((deletePhysicalFile || item.isUploaded) && fs.existsSync(item.filePath)) {
       try {
@@ -110,6 +128,14 @@ class VideoRegistry {
       }
     }
     return true;
+  }
+
+  setThumbnailPath(id, thumbnailPath) {
+    const item = this.get(id);
+    if (!item) return null;
+    item.thumbnailPath = thumbnailPath;
+    this.save();
+    return item;
   }
 
   setShortUrl(id, shortUrl) {

@@ -2,22 +2,112 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>กำลังโหลดวิดีโอ... - Local Video Streamer</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Video Streamer</title>
+  <link rel="icon" type="image/png" href="/icon.png">
   <style>
-    body {
-      background-color: #f8fafc;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      background-color: #000000 !important;
+      background: #000000 !important;
+      color: #ffffff;
+      width: 100vw;
+      height: 100vh;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
     .player-container {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #000000;
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+    #player-active {
       width: 100%;
-      max-width: 900px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000000;
+    }
+    .video-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000000;
+    }
+    .video-wrapper video {
+      width: 100%;
+      height: 100%;
+      max-width: 100vw;
+      max-height: 100vh;
+      max-height: 100dvh;
+      object-fit: contain;
+      background: #000000;
+      border: none;
+      outline: none;
+      display: block;
+    }
+    .revoked-box {
+      text-align: center;
+      padding: 30px 20px;
+      max-width: 400px;
+      color: #a1a1aa;
+    }
+    .revoked-icon {
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: center;
+    }
+    .revoked-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f87171;
+      margin-bottom: 6px;
+    }
+    .revoked-desc {
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: #a1a1aa;
+    }
+    .loading-box {
+      text-align: center;
+      color: #38bdf8;
+    }
+    .loading-spinner {
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: center;
+    }
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .svg-icon-xl {
+      width: 42px;
+      height: 42px;
     }
   </style>
 </head>
@@ -26,41 +116,42 @@
     <!-- Active Player State -->
     <div id="player-active" style="display: none;">
       <div class="video-wrapper">
-        <video id="video-element" controls playsinline preload="metadata">
+        <video 
+          id="video-element" 
+          controls 
+          playsinline 
+          webkit-playsinline="true" 
+          preload="auto"
+        >
           <source id="video-source" src="" type="video/mp4">
-          เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอนี้
+          เบราว์เซอร์ไม่รองรับการเล่นวิดีโอนี้
         </video>
-      </div>
-
-      <div class="player-info">
-        <div>
-          <h2 id="video-title" style="font-size: 18px; font-weight: 700; color: #0f172a; word-break: break-all;">ชื่อวิดีโอ</h2>
-          <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px; display: flex; gap: 12px;">
-            <span id="video-size">ขนาด: -</span>
-            <span id="video-views">เข้าชม: 0 ครั้ง</span>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 12px; background: var(--success-light); color: #065f46; padding: 4px 10px; border-radius: 9999px; font-weight: 600;">
-            🟢 กำลังสตรีมสดจากเครื่องเจ้าของ
-          </span>
-        </div>
       </div>
     </div>
 
     <!-- Revoked / Not Found State -->
     <div id="player-revoked" class="revoked-box" style="display: none;">
-      <div class="revoked-icon">🚫</div>
-      <div class="revoked-title">วิดีโอนี้ไม่สามารถรับชมได้แล้ว</div>
+      <div class="revoked-icon">
+        <svg class="svg-icon-xl" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+      </div>
+      <h2 class="revoked-title">ไม่พบวิดีโอ</h2>
       <p class="revoked-desc">
-        เจ้าของยกเลิกการแชร์หรือลบไฟล์ออกจากเครื่องเรียบร้อยแล้ว ลิงก์สาธารณะนี้จึงถูกปิดการเข้าถึงโดยสมบูรณ์
+        ไฟล์ถูกยกเลิกการแชร์หรือลบแล้ว
       </p>
     </div>
 
     <!-- Loading State -->
-    <div id="player-loading" style="text-align: center; padding: 60px 20px;">
-      <div style="font-size: 36px; animation: spin 1s infinite linear;">⏳</div>
-      <p style="margin-top: 12px; font-size: 14px; color: var(--text-muted);">กำลังเชื่อมต่อกับเครื่องต้นทางเพื่อเตรียมเล่นคลิป...</p>
+    <div id="player-loading" class="loading-box">
+      <div class="loading-spinner">
+        <svg class="svg-icon-xl animate-spin" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+        </svg>
+      </div>
+      <p style="font-size: 13px; color: #a1a1aa;">กำลังโหลด...</p>
     </div>
   </div>
 

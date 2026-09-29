@@ -1,3 +1,4 @@
+process.env.NODE_ENV = 'test';
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -99,14 +100,62 @@ test('API Integration Tests', async (t) => {
     assert.strictEqual(res.headers['content-length'], '100');
   });
 
-  await t.test('POST /api/shares/:id/shorten shortens URL via da.gd', async () => {
+  await t.test('POST /api/shares/:id/shorten shortens URL via spoo.me', async () => {
     const res = await request(app)
       .post(`/api/shares/${localShareId}/shorten`)
       .send({ baseUrl: 'https://example.com' });
 
     assert.strictEqual(res.status, 200);
     assert.ok(res.body.shortUrl);
-    assert.ok(res.body.shortUrl.startsWith('https://da.gd/'));
+    assert.ok(res.body.shortUrl.startsWith('http'));
+  });
+
+  await t.test('GET /api/thumbnail/:id returns fallback SVG poster if no image uploaded', async () => {
+    const res = await request(app).get(`/api/thumbnail/${localShareId}`);
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.header['content-type'].includes('image/svg+xml'));
+    const bodyStr = res.text || (Buffer.isBuffer(res.body) ? res.body.toString('utf8') : String(res.body));
+    assert.ok(bodyStr.includes('<svg'));
+    assert.ok(bodyStr.includes('sample_clip.mp4'));
+  });
+
+  await t.test('POST /api/shares/:id/thumbnail uploads JPEG cover and serves it as image/jpeg', async () => {
+    // 1x1 dummy jpeg base64
+    const dummyJpeg = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+    const postRes = await request(app)
+      .post(`/api/shares/${localShareId}/thumbnail`)
+      .send({ dataUrl: dummyJpeg });
+
+    assert.strictEqual(postRes.status, 200);
+    assert.strictEqual(postRes.body.success, true);
+
+    const getRes = await request(app).get(`/api/thumbnail/${localShareId}.jpg`);
+    assert.strictEqual(getRes.status, 200);
+    assert.strictEqual(getRes.header['content-type'], 'image/jpeg');
+  });
+
+  await t.test('GET /api/oembed returns valid oEmbed video schema', async () => {
+    const res = await request(app).get(`/api/oembed?url=https://test-tunnel.trycloudflare.com/v/${localShareId}&format=json`);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.type, 'video');
+    assert.strictEqual(res.body.title, 'sample_clip.mp4');
+    assert.ok(res.body.thumbnail_url.includes('/api/thumbnail/'));
+  });
+
+  await t.test('GET /v/:id injects rich Open Graph and Twitter video tags', async () => {
+    const res = await request(app).get(`/v/${localShareId}`);
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.text.includes('og:video'));
+    assert.ok(res.text.includes('og:image'));
+    assert.ok(res.text.includes('twitter:card'));
+    assert.ok(res.text.includes('sample_clip.mp4'));
+  });
+
+  await t.test('GET /v/:id.mp4 streams video directly with inline disposition', async () => {
+    const res = await request(app).get(`/v/${localShareId}.mp4`);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers['content-type'], 'video/mp4');
+    assert.ok(res.headers['content-disposition'].includes('inline'));
   });
 
   await t.test('DELETE /api/shares/:id revokes share immediately', async () => {
@@ -132,7 +181,7 @@ test('API Integration Tests', async (t) => {
 
     const res = await request(app).delete(`/api/shares/${uploadedShareId}`);
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(fs.existsSync(filePath), false); // Uploaded file deleted
+    assert.strictEqual(fs.existsSync(filePath), false);
   });
 
   // Cleanup

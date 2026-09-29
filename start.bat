@@ -3,7 +3,7 @@ chcp 65001 > nul
 title Local Video Streamer
 
 echo ========================================================
-echo   🎬 Local Video Streamer - Instant Video Sharing
+echo   [App] Local Video Streamer - Instant Video Sharing
 echo ========================================================
 echo.
 

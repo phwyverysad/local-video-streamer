@@ -1,7 +1,7 @@
 /**
- * Service to shorten URLs using da.gd API
+ * Dedicated URL Shortener module using spoo.me
  */
-async function shortenWithDaGd(longUrl, { timeoutMs = 8000 } = {}) {
+async function shortenUrl(longUrl, { timeoutMs = 8000 } = {}) {
   if (!longUrl || typeof longUrl !== 'string') {
     throw new Error('A valid URL string is required');
   }
@@ -16,37 +16,38 @@ async function shortenWithDaGd(longUrl, { timeoutMs = 8000 } = {}) {
     throw new Error('Invalid URL format: ' + err.message);
   }
 
-  const endpoint = `https://da.gd/s?url=${encodeURIComponent(longUrl.trim())}`;
-
+  const cleanLongUrl = longUrl.trim();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(endpoint, {
+    const res = await fetch('https://spoo.me', {
+      method: 'POST',
       signal: controller.signal,
       headers: {
-        'User-Agent': 'LocalVideoStreamer/1.0'
-      }
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: 'url=' + encodeURIComponent(cleanLongUrl)
     });
-
-    if (!response.ok) {
-      throw new Error(`da.gd responded with status ${response.status}: ${response.statusText}`);
-    }
-
-    const shortUrl = (await response.text()).trim();
-    if (!shortUrl || !shortUrl.startsWith('http')) {
-      throw new Error('da.gd returned an invalid response: ' + shortUrl);
-    }
-
-    return shortUrl;
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      throw new Error(`da.gd request timed out after ${timeoutMs}ms`);
-    }
-    throw err;
-  } finally {
     clearTimeout(timer);
+
+    if (!res.ok) {
+      throw new Error(`spoo.me HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (data && data.short_url) {
+      return data.short_url.replace(/^http:\/\//i, 'https://');
+    }
+    throw new Error('spoo.me did not return a valid short_url');
+  } catch (err) {
+    clearTimeout(timer);
+    throw new Error('Failed to shorten URL with spoo.me: ' + err.message);
   }
 }
 
-module.exports = { shortenWithDaGd };
+// Keep shortenWithDaGd as backward compatible alias
+const shortenWithDaGd = shortenUrl;
+
+module.exports = { shortenUrl, shortenWithDaGd };

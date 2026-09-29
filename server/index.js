@@ -1,32 +1,42 @@
+const { exec } = require('child_process');
 const { createApp } = require('./app');
 const { defaultTunnelManager } = require('./tunnel');
 
 const PORT = process.env.PORT || 3000;
 const app = createApp();
 
-const server = app.listen(PORT, async () => {
+// Explicitly bind to '0.0.0.0' to ensure Cloudflare tunnel local proxy 127.0.0.1 connects instantly without 503
+const server = app.listen(PORT, '0.0.0.0', async () => {
   console.log('\n========================================================');
-  console.log('🎬 Local Video Streamer กำลังทำงาน!');
-  console.log(`🌐 Dashboard (เปิดในเครื่องคุณ): http://localhost:${PORT}`);
-  console.log('⏳ กำลังเชื่อมต่อ Secure Public Tunnel (Cloudflare)...');
+  console.log('[App] Local Video Streamer running');
+  console.log(`[Dashboard] http://localhost:${PORT}`);
+  console.log('[Tunnel] Connecting to Secure Cloudflare Tunnel (HTTP/2)...');
   console.log('========================================================\n');
+
+  // Auto open browser on Windows when running standalone or server start
+  if (process.env.AUTO_OPEN !== 'false' && process.env.NODE_ENV !== 'test') {
+    const cmd = process.platform === 'win32' ? `start http://localhost:${PORT}` : `open http://localhost:${PORT}`;
+    exec(cmd, (err) => {
+      if (err) console.log(`[Notice] Open your browser at http://localhost:${PORT}`);
+    });
+  }
 
   try {
     const publicUrl = await defaultTunnelManager.start(PORT);
-    console.log('✅ Public Tunnel พร้อมใช้งานแล้ว!');
-    console.log(`🌍 Public Link Base: ${publicUrl}`);
-    console.log('💡 เพื่อนของคุณสามารถเปิดดูวิดีโอผ่านลิงก์นี้ได้ทันที\n');
+    console.log('[Tunnel] Cloudflare Tunnel Ready');
+    console.log(`[Public Link Base] ${publicUrl}`);
+    console.log('[Ready] Instant video sharing is active\n');
   } catch (err) {
-    console.warn('⚠️ ไม่สามารถเริ่ม Public Tunnel ได้โดยอัตโนมัติ:', err.message);
-    console.log('💡 ระบบยังคงทำงานได้บนเครือข่ายภายใน (Localhost)');
+    console.warn('[Tunnel] Could not establish public tunnel:', err.message);
+    console.log('[Notice] System running in local network mode (Localhost)');
   }
 });
 
 function gracefulShutdown() {
-  console.log('\n🛑 กำลังปิดระบบ...');
+  console.log('\n[App] Shutting down...');
   defaultTunnelManager.stop();
   server.close(() => {
-    console.log('✅ ปิดระบบเรียบร้อย');
+    console.log('[App] Server stopped successfully');
     process.exit(0);
   });
 }

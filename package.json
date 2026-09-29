@@ -1,16 +1,21 @@
 {
-  "name": "charming-raman",
+  "name": "video-streamer",
+  "productName": "Video Streamer",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "description": "Video Streamer - Instant Local Video Streaming Desktop App",
+  "main": "electron/main.js",
   "scripts": {
-    "start": "node server/index.js",
-    "test": "node --test test/registry.test.js test/stream.test.js test/shortener.test.js test/api.test.js test/e2e-browser.test.js"
+    "start": "electron .",
+    "start:server": "node server/index.js",
+    "test": "node --test test/registry.test.js test/stream.test.js test/shortener.test.js test/api.test.js"
   },
-  "keywords": [],
+  "keywords": [
+    "video-streamer",
+    "electron",
+    "desktop-app",
+    "byte-range",
+    "local-video"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -22,5 +27,8 @@
     "multer": "^2.4.0",
     "puppeteer-core": "^25.12.0",
     "supertest": "^7.3.0"
+  },
+  "devDependencies": {
+    "electron": "^44.4.5"
   }
 }

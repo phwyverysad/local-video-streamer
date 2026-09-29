@@ -17,6 +17,9 @@ test('streamVideo - HTTP Range streaming', async (t) => {
   app.get('/video', (req, res) => {
     streamVideo(req, res, dummyFile, 'video/mp4');
   });
+  app.head('/video', (req, res) => {
+    streamVideo(req, res, dummyFile, 'video/mp4');
+  });
 
   await t.test('returns 200 with full content when no Range header', async () => {
     const res = await request(app).get('/video');
@@ -25,6 +28,14 @@ test('streamVideo - HTTP Range streaming', async (t) => {
     assert.strictEqual(res.headers['content-type'], 'video/mp4');
     assert.strictEqual(res.headers['content-length'], '100');
     assert.strictEqual(res.body.length, 100);
+  });
+
+  await t.test('handles HEAD requests cleanly', async () => {
+    const res = await request(app).head('/video');
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers['accept-ranges'], 'bytes');
+    assert.strictEqual(res.headers['content-type'], 'video/mp4');
+    assert.strictEqual(res.headers['content-length'], '100');
   });
 
   await t.test('returns 206 Partial Content with correct Content-Range', async () => {

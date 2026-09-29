@@ -5,12 +5,14 @@ const fs = require('fs');
 class TunnelManager {
   constructor() {
     this.process = null;
-    this.localtunnelInstance = null;
     this.publicUrl = null;
-    this.provider = null;
+    this.provider = 'cloudflare';
     this.isStarting = false;
     this.status = 'offline'; // 'offline' | 'starting' | 'online' | 'error'
     this.errorMessage = null;
+    this.port = 3000;
+    this.reconnectTimer = null;
+    this.healthCheckInterval = null;
 
     // Graceful cleanup
     process.on('exit', () => this.stop());
@@ -20,12 +22,38 @@ class TunnelManager {
     });
   }
 
-  async start(port = 3000, { timeoutMs = 25000 } = {}) {
+  getCloudflaredBinary() {
+    try {
+      const cloudflared = require('cloudflared');
+      if (cloudflared.bin && fs.existsSync(cloudflared.bin)) {
+        return cloudflared.bin;
+      }
+    } catch (e) {}
+
+    const candidates = [
+      path.resolve(path.dirname(process.execPath), 'cloudflared.exe'),
+      path.resolve(process.cwd(), 'cloudflared.exe'),
+      path.resolve(process.cwd(), 'dist', 'cloudflared.exe'),
+      path.resolve(__dirname, '..', 'dist', 'cloudflared.exe'),
+      path.resolve(__dirname, '..', 'node_modules', 'cloudflared', 'bin', 'cloudflared.exe'),
+      path.resolve(__dirname, 'cloudflared.exe'),
+      path.resolve(require('os').tmpdir(), 'local-video-streamer', 'cloudflared.exe'),
+      'cloudflared'
+    ];
+
+    for (const c of candidates) {
+      if (fs.existsSync(c)) return c;
+    }
+    return 'cloudflared';
+  }
+
+  async start(port = 3000, { timeoutMs = 35000 } = {}) {
+    this.port = port;
+
     if (this.status === 'online' && this.publicUrl) {
       return this.publicUrl;
     }
     if (this.isStarting) {
-      // Wait for existing start attempt
       return new Promise((resolve) => {
         const interval = setInterval(() => {
           if (!this.isStarting) {
@@ -41,30 +69,20 @@ class TunnelManager {
     this.errorMessage = null;
 
     try {
-      // 1. Try Localtunnel first (loca.lt is fully supported and whitelisted by da.gd)
-      const ltUrl = await this.startLocaltunnel(port, 15000);
-      this.publicUrl = ltUrl;
-      this.provider = 'localtunnel';
+      const cfUrl = await this.startCloudflare(port, timeoutMs);
+      this.publicUrl = cfUrl;
       this.status = 'online';
-      console.log(`[Tunnel] Localtunnel established: ${ltUrl}`);
-      return ltUrl;
-    } catch (ltErr) {
-      console.warn(`[Tunnel] Localtunnel failed (${ltErr.message}), falling back to Cloudflare...`);
-
-      try {
-        // 2. Fallback to Cloudflare Quick Tunnel
-        const cfUrl = await this.startCloudflare(port, timeoutMs);
-        this.publicUrl = cfUrl;
-        this.provider = 'cloudflare';
-        this.status = 'online';
-        console.log(`[Tunnel] Cloudflare tunnel established: ${cfUrl}`);
-        return cfUrl;
-      } catch (cfErr) {
-        this.status = 'error';
-        this.errorMessage = `Tunnel failed: LT (${ltErr.message}) / CF (${cfErr.message})`;
-        console.error(`[Tunnel] All tunnel providers failed: ${this.errorMessage}`);
-        throw new Error(this.errorMessage);
-      }
+      console.log(`[Tunnel] Cloudflare Tunnel established & verified: ${cfUrl}`);
+      
+      // Start active background health check
+      this.startHealthCheck();
+      
+      return cfUrl;
+    } catch (err) {
+      this.status = 'error';
+      this.errorMessage = err.message;
+      console.error(`[Tunnel] Cloudflare Tunnel failed: ${err.message}`);
+      throw err;
     } finally {
       this.isStarting = false;
     }
@@ -72,19 +90,18 @@ class TunnelManager {
 
   startCloudflare(port, timeoutMs) {
     return new Promise((resolve, reject) => {
-      let binPath = null;
-      try {
-        const cloudflared = require('cloudflared');
-        binPath = cloudflared.bin;
-      } catch (e) {
-        binPath = path.resolve(__dirname, '..', 'node_modules', 'cloudflared', 'bin', 'cloudflared.exe');
-      }
+      const binPath = this.getCloudflaredBinary();
+      
+      // --protocol http2 forces robust TCP 443 instead of UDP QUIC (prevents 503 Tunnel Unavailable on ISP/firewall blocks)
+      const args = [
+        'tunnel',
+        '--url', `http://127.0.0.1:${port}`,
+        '--protocol', 'http2',
+        '--no-autoupdate',
+        '--edge-ip-version', '4',
+        '--grace-period', '10s'
+      ];
 
-      if (!binPath || !fs.existsSync(binPath)) {
-        return reject(new Error('cloudflared binary not found at ' + binPath));
-      }
-
-      const args = ['tunnel', '--url', `http://127.0.0.1:${port}`];
       const child = spawn(binPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
       this.process = child;
 
@@ -97,13 +114,18 @@ class TunnelManager {
         }
       }, timeoutMs);
 
-      const onOutput = (chunk) => {
+      const onOutput = async (chunk) => {
         const text = chunk.toString();
         const match = text.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
         if (match && !resolved) {
           resolved = true;
           clearTimeout(timer);
-          resolve(match[0]);
+          const foundUrl = match[0];
+
+          // Wait a short moment for Cloudflare edge route propagation
+          setTimeout(() => {
+            resolve(foundUrl);
+          }, 1500);
         }
       };
 
@@ -126,75 +148,63 @@ class TunnelManager {
         } else {
           this.status = 'offline';
           this.publicUrl = null;
+          // Auto reconnect after 3 seconds if unexpected exit
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = setTimeout(() => {
+            console.log('[Tunnel] Auto-reconnecting Cloudflare tunnel...');
+            this.start(this.port).catch(() => {});
+          }, 3000);
         }
       });
     });
   }
 
-  async startLocaltunnel(port, timeoutMs) {
-    const localtunnel = require('localtunnel');
-    return new Promise((resolve, reject) => {
-      let resolved = false;
-      const timer = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          reject(new Error(`Localtunnel timed out after ${timeoutMs}ms`));
-        }
-      }, timeoutMs);
-
-      localtunnel({ port })
-        .then((tunnel) => {
-          if (resolved) {
-            tunnel.close();
-            return;
-          }
-          resolved = true;
-          clearTimeout(timer);
-          this.localtunnelInstance = tunnel;
-          tunnel.on('close', () => {
-            this.status = 'offline';
-            this.publicUrl = null;
+  startHealthCheck() {
+    clearInterval(this.healthCheckInterval);
+    this.healthCheckInterval = setInterval(async () => {
+      if (this.status === 'online' && this.publicUrl) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 6000);
+          const res = await fetch(`${this.publicUrl}/api/status`, {
+            signal: controller.signal,
+            headers: { 'Cache-Control': 'no-cache' }
           });
-          resolve(tunnel.url);
-        })
-        .catch((err) => {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(timer);
-            reject(err);
+          clearTimeout(timer);
+          if (!res.ok && (res.status === 503 || res.status === 502)) {
+            console.warn(`[Tunnel] Health check returned ${res.status} (503 Tunnel Unavailable). Restarting tunnel...`);
+            this.stop();
+            this.start(this.port).catch(() => {});
           }
-        });
-    });
+        } catch (err) {
+          // Network fluctuation or temporary glitch
+        }
+      }
+    }, 20000);
   }
 
   stop() {
+    clearInterval(this.healthCheckInterval);
+    clearTimeout(this.reconnectTimer);
     if (this.process) {
       try {
         this.process.kill('SIGKILL');
       } catch (e) {}
       this.process = null;
     }
-    if (this.localtunnelInstance) {
-      try {
-        this.localtunnelInstance.close();
-      } catch (e) {}
-      this.localtunnelInstance = null;
-    }
     this.status = 'offline';
     this.publicUrl = null;
-    this.provider = null;
   }
 
   getStatus() {
     return {
       status: this.status,
       publicUrl: this.publicUrl,
-      provider: this.provider,
+      provider: 'cloudflare',
       errorMessage: this.errorMessage
     };
   }
 }
 
-// Export singleton instance or class
 const defaultTunnelManager = new TunnelManager();
 module.exports = { TunnelManager, defaultTunnelManager };

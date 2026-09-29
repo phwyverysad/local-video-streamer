@@ -13,6 +13,12 @@ const PORT = process.env.PORT || 3000;
 
 app.setName('Video Streamer');
 
+// Prevent Chromium disk cache locking and GPU cache errors
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
+app.commandLine.appendSwitch('disable-gpu-program-cache');
+app.commandLine.appendSwitch('disable-features', 'GpuShaderDiskCache');
+app.commandLine.appendSwitch('log-level', '3');
+
 // Load & Save Desktop App Settings
 const settingsFilePath = path.join(app.getPath('userData'), 'settings.json');
 

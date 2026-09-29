@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const os = require('os');
 const puppeteer = require('puppeteer-core');
 
 function getBrowserExecutable() {
@@ -13,17 +14,15 @@ function getBrowserExecutable() {
 
 /**
  * Extract a real, high-quality, non-black video frame from a video file on disk.
- * Uses an ephemeral local HTTP Range server + Headless Chrome / Edge for hardware decoding.
+ * Uses an ephemeral local HTTP Range server + Headless Chrome / Edge with isolated scratch directory.
  */
 async function extractVideoFramePuppeteer(videoFilePath, outputJpgPath) {
   const browserPath = getBrowserExecutable();
   if (!browserPath) {
-    console.warn('[Thumbnail] No Chrome/Edge browser found for server-side thumbnail extraction.');
     return false;
   }
 
   if (!fs.existsSync(videoFilePath)) {
-    console.warn('[Thumbnail] Video file does not exist:', videoFilePath);
     return false;
   }
 
@@ -42,7 +41,6 @@ async function extractVideoFramePuppeteer(videoFilePath, outputJpgPath) {
     </html>
   `;
 
-  // Ephemeral HTTP server serving both the page and video stream to avoid CORS & security issues
   let server;
   let port;
   try {
@@ -61,6 +59,9 @@ async function extractVideoFramePuppeteer(videoFilePath, outputJpgPath) {
           const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
           const chunksize = (end - start) + 1;
           const file = fs.createReadStream(videoFilePath, { start, end });
+          file.on('error', () => {
+            try { res.end(); } catch (e) {}
+          });
           res.writeHead(206, {
             'Content-Range': `bytes ${start}-${end}/${fileSize}`,
             'Accept-Ranges': 'bytes',
@@ -75,7 +76,11 @@ async function extractVideoFramePuppeteer(videoFilePath, outputJpgPath) {
             'Content-Type': 'video/mp4',
             'Access-Control-Allow-Origin': '*'
           });
-          fs.createReadStream(videoFilePath).pipe(res);
+          const file = fs.createReadStream(videoFilePath);
+          file.on('error', () => {
+            try { res.end(); } catch (e) {}
+          });
+          file.pipe(res);
         }
         return;
       }
@@ -91,21 +96,35 @@ async function extractVideoFramePuppeteer(videoFilePath, outputJpgPath) {
 
     port = server.address().port;
   } catch (err) {
-    console.error('[Thumbnail] Failed to start ephemeral server:', err);
     if (server) server.close();
     return false;
   }
 
   let browser;
+  let tempUserDataDir = null;
   try {
+    tempUserDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vthumb-p-'));
+
     browser = await puppeteer.launch({
       executablePath: browserPath,
       headless: 'new',
+      userDataDir: tempUserDataDir,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-gpu-shader-disk-cache'
+        '--disable-gpu-shader-disk-cache',
+        '--disable-gpu-program-cache',
+        '--disable-features=GpuShaderDiskCache',
+        '--disk-cache-size=1',
+        '--media-cache-size=1',
+        '--disable-background-networking',
+        '--disable-component-update',
+        '--disable-sync',
+        '--mute-audio',
+        '--no-first-run',
+        '--no-default-browser-check',
+        '--log-level=3'
       ]
     });
 
@@ -216,11 +235,13 @@ async function extractVideoFramePuppeteer(videoFilePath, outputJpgPath) {
     }
     return false;
   } catch (err) {
-    console.error('[Thumbnail] Extraction error:', err);
     return false;
   } finally {
     if (browser) {
       try { await browser.close(); } catch (e) {}
+    }
+    if (tempUserDataDir && fs.existsSync(tempUserDataDir)) {
+      try { fs.rmSync(tempUserDataDir, { recursive: true, force: true }); } catch (e) {}
     }
     if (server) {
       try { server.close(); } catch (e) {}
@@ -229,4 +250,3 @@ async function extractVideoFramePuppeteer(videoFilePath, outputJpgPath) {
 }
 
 module.exports = { extractVideoFramePuppeteer };
-

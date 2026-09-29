@@ -28,10 +28,20 @@ console.log('Built dist/Video-Streamer-Installer.exe (Lightweight Web Installer)
 console.log('\n[4/4] Building Electron Portable Executable & Zip...');
 execSync('npx electron-builder --win portable zip', { stdio: 'inherit' });
 
-const defaultZip = path.join(distDir, 'Video Streamer-1.0.0-win.zip');
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
+const exactZip = path.join(distDir, `Video Streamer-${pkg.version}-win.zip`);
 const targetZip = path.join(distDir, 'Video-Streamer-win.zip');
-if (fs.existsSync(defaultZip)) {
-  fs.copyFileSync(defaultZip, targetZip);
+
+if (fs.existsSync(exactZip)) {
+  fs.copyFileSync(exactZip, targetZip);
+} else {
+  const zipFiles = fs.readdirSync(distDir)
+    .filter(f => f.startsWith('Video Streamer-') && f.endsWith('-win.zip'))
+    .map(f => ({ name: f, time: fs.statSync(path.join(distDir, f)).mtime.getTime() }))
+    .sort((a, b) => b.time - a.time);
+  if (zipFiles.length > 0) {
+    fs.copyFileSync(path.join(distDir, zipFiles[0].name), targetZip);
+  }
 }
 
 console.log('\n==============================================');

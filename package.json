@@ -7,7 +7,11 @@
   "scripts": {
     "start": "electron .",
     "start:server": "node server/index.js",
-    "test": "node --test test/registry.test.js test/stream.test.js test/shortener.test.js test/api.test.js"
+    "test": "node --test test/registry.test.js test/stream.test.js test/shortener.test.js test/api.test.js",
+    "build": "node scripts/build-all.js",
+    "build:installer": "node scripts/make-ico.js && C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe /target:winexe /win32icon:public\\icon.ico /out:dist\\Video-Streamer-Installer.exe /r:System.IO.Compression.FileSystem.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll scripts\\WebInstaller.cs",
+    "build:portable": "electron-builder --win portable zip",
+    "build:dir": "electron-builder --dir"
   },
   "keywords": [
     "video-streamer",
@@ -29,6 +33,40 @@
     "supertest": "^7.3.0"
   },
   "devDependencies": {
-    "electron": "^44.4.5"
+    "electron": "^44.4.5",
+    "electron-builder": "^26.7.0"
+  },
+  "build": {
+    "appId": "com.phwyverysad.videostreamer",
+    "productName": "Video Streamer",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "portable",
+        "zip"
+      ],
+      "icon": "public/icon.ico"
+    },
+    "portable": {
+      "artifactName": "Video-Streamer-Portable.exe"
+    },
+    "zip": {
+      "artifactName": "Video-Streamer-win.zip"
+    },
+    "extraResources": [
+      {
+        "from": "node_modules/cloudflared/bin/cloudflared.exe",
+        "to": "cloudflared.exe"
+      }
+    ],
+    "files": [
+      "**/*",
+      "!test/**/*",
+      "!docs/**/*",
+      "!dist/**/*",
+      "!scripts/**/*"
+    ]
   }
 }
